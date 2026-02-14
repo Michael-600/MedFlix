@@ -295,6 +295,47 @@ app.get('/api/liveavatar/transcript/:sessionId', async (req, res) => {
   }
 })
 
+// Stop all active sessions (cleanup helper)
+app.post('/api/liveavatar/stop-all', async (_req, res) => {
+  try {
+    // List active sessions
+    const listData = await liveAvatarFetch('/v1/sessions?type=active')
+    const sessions = listData?.data?.results || []
+
+    if (sessions.length === 0) {
+      return res.json({ stopped: 0, message: 'No active sessions' })
+    }
+
+    // Stop each active session
+    const results = []
+    for (const session of sessions) {
+      try {
+        const stopRes = await fetch(`${LIVEAVATAR_BASE}/v1/sessions/stop`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Api-Key': LIVEAVATAR_API_KEY,
+          },
+          body: JSON.stringify({
+            session_id: session.session_id,
+            reason: 'CLEANUP',
+          }),
+        })
+        const stopData = await stopRes.json()
+        results.push({ session_id: session.session_id, result: stopData.code })
+      } catch (e) {
+        results.push({ session_id: session.session_id, error: e.message })
+      }
+    }
+
+    console.log(`Stopped ${results.length} active sessions`)
+    res.json({ stopped: results.length, results })
+  } catch (e) {
+    console.error('liveavatar stop-all error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
 // ═══════════════════════════════════════════════════════
 //  Root + Health check
 // ═══════════════════════════════════════════════════════

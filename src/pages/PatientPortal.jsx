@@ -85,7 +85,7 @@ export default function PatientPortal() {
           </>
         )}
         {activeTab === 'avatar' && (
-          <LiveAvatar patientName={user?.name} diagnosis={plan?.diagnosis} />
+          <LiveAvatar />
         )}
         {activeTab === 'assistant' && (
           <AIAssistant patientName={user?.name} diagnosis={plan?.diagnosis} />
