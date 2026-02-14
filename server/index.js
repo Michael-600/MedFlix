@@ -1,6 +1,8 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
+import { getPerplexityKey, perplexitySonarChat } from './perplexitySonar.js'
+import { buildHeyGenPrompt, buildPerplexityDeepResearchPrompt, safePreview } from './heygenPrompt.js'
 
 const app = express()
 app.use(cors())
@@ -8,6 +10,10 @@ app.use(express.json())
 
 const HEYGEN_API_KEY = process.env.HEYGEN_API_KEY
 const LIVEAVATAR_API_KEY = process.env.LIVEAVATAR_API_KEY
+const PERPLEXITY_API_KEY = getPerplexityKey()
+const HEYGEN_DISABLED =
+  String(process.env.HEYGEN_DISABLED || '').toLowerCase() === 'true' ||
+  String(process.env.DISABLE_HEYGEN || '').toLowerCase() === 'true'
 const HEYGEN_BASE = 'https://api.heygen.com'
 const LIVEAVATAR_BASE = 'https://api.liveavatar.com'
 
@@ -34,6 +40,24 @@ async function liveAvatarFetch(path, opts = {}) {
     },
   })
   return res.json()
+}
+
+// Simple in-memory cache to avoid repeat Sonar calls during bulk generation
+const sonarCache = new Map()
+const SONAR_CACHE_TTL_MS = 10 * 60 * 1000
+
+function getCachedSonar(key) {
+  const item = sonarCache.get(key)
+  if (!item) return null
+  if (Date.now() > item.expiresAt) {
+    sonarCache.delete(key)
+    return null
+  }
+  return item.value
+}
+
+function setCachedSonar(key, value) {
+  sonarCache.set(key, { value, expiresAt: Date.now() + SONAR_CACHE_TTL_MS })
 }
 
 // ═══════════════════════════════════════════════════════
@@ -65,7 +89,74 @@ app.get('/api/heygen/voices', async (_req, res) => {
 // Generate video via Video Agent (prompt → video)
 app.post('/api/heygen/generate-video', async (req, res) => {
   try {
-    const { prompt, avatar_id, duration_sec, orientation } = req.body
+    const {
+      prompt: basePrompt,
+      avatar_id,
+      duration_sec,
+      orientation,
+      patient,
+      episode,
+      openEvidence,
+      use_sonar,
+      sonar_model,
+      sonar_search_recency_filter,
+    } = req.body
+
+    let sonar = null
+    if (use_sonar && PERPLEXITY_API_KEY) {
+      const sonarMessages = buildPerplexityDeepResearchPrompt({
+        patient,
+        episode,
+        openEvidence,
+      })
+      const cacheKey = JSON.stringify({
+        model: sonar_model || 'sonar',
+        search_recency_filter: sonar_search_recency_filter || 'month',
+        messages: sonarMessages,
+      })
+      const cached = getCachedSonar(cacheKey)
+      if (cached) {
+        sonar = cached
+      } else {
+        const sonarResult = await perplexitySonarChat({
+          apiKey: PERPLEXITY_API_KEY,
+          model: sonar_model || 'sonar',
+          messages: sonarMessages,
+          search_recency_filter: sonar_search_recency_filter || 'month',
+        })
+        if (sonarResult.ok) {
+          sonar = sonarResult.data
+          setCachedSonar(cacheKey, sonar)
+        } else {
+          console.warn('[Perplexity] Sonar call failed:', sonarResult.error, safePreview(sonarResult.detail))
+        }
+      }
+    }
+
+    const prompt = buildHeyGenPrompt({
+      basePrompt: basePrompt,
+      patient,
+      episode,
+      openEvidence,
+      sonarResearch: sonar,
+    })
+
+    if (HEYGEN_DISABLED || !HEYGEN_API_KEY) {
+      return res.json({
+        data: {
+          video_id: null,
+        },
+        error: HEYGEN_DISABLED ? 'heygen_disabled' : 'missing_heygen_api_key',
+        medflix: {
+          prompt,
+          used_sonar: Boolean(use_sonar && PERPLEXITY_API_KEY && sonar?.content),
+          sonar_model: use_sonar ? (sonar_model || 'sonar') : null,
+          sonar_content: sonar?.content || null,
+          sonar_preview: sonar?.content ? safePreview(sonar.content, 800) : null,
+        },
+      })
+    }
+
     const body = { prompt }
     if (avatar_id || duration_sec || orientation) {
       body.config = {}
@@ -77,7 +168,16 @@ app.post('/api/heygen/generate-video', async (req, res) => {
       method: 'POST',
       body: JSON.stringify(body),
     })
-    res.json(data)
+    res.json({
+      ...data,
+      medflix: {
+        prompt,
+        used_sonar: Boolean(use_sonar && PERPLEXITY_API_KEY && sonar?.content),
+        sonar_model: use_sonar ? (sonar_model || 'sonar') : null,
+        sonar_content: sonar?.content || null,
+        sonar_preview: sonar?.content ? safePreview(sonar.content, 800) : null,
+      },
+    })
   } catch (e) {
     console.error('generate-video error:', e)
     res.status(500).json({ error: e.message })
@@ -347,7 +447,9 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     heygen: !!HEYGEN_API_KEY,
+    heygen_disabled: HEYGEN_DISABLED,
     liveavatar: !!LIVEAVATAR_API_KEY,
+    perplexity: !!PERPLEXITY_API_KEY,
   })
 })
 
@@ -356,4 +458,5 @@ app.listen(PORT, () => {
   console.log(`MedFlix API server running on http://localhost:${PORT}`)
   console.log(`  HeyGen key: ${HEYGEN_API_KEY ? '***' + HEYGEN_API_KEY.slice(-6) : 'MISSING'}`)
   console.log(`  LiveAvatar key: ${LIVEAVATAR_API_KEY ? '***' + LIVEAVATAR_API_KEY.slice(-6) : 'MISSING'}`)
+  console.log(`  Perplexity key: ${PERPLEXITY_API_KEY ? '***' + PERPLEXITY_API_KEY.slice(-6) : 'MISSING'}`)
 })

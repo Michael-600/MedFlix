@@ -123,7 +123,11 @@ export default function PatientPortal() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6">
-              <CreateContent onComplete={handleContentCreated} />
+              <CreateContent
+                onComplete={handleContentCreated}
+                defaultPatientName={user?.name || ''}
+                defaultDiagnosis={plan?.diagnosis || user?.diagnosis || ''}
+              />
             </div>
           </div>
         </div>

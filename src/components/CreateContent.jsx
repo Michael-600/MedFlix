@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { visualStyles, defaultRecoveryPlan } from '../data/mockData'
+import { searchClinicalData } from '../api/clinicalDataTool'
 import {
   Palette, Users, Upload, Film, CheckCircle, PenLine,
   Plus, FileText, Image as ImageIcon, X, Trash2, Loader2, RefreshCw,
@@ -11,10 +12,16 @@ const STEPS = [
   { id: 'complete', label: 'Complete', icon: CheckCircle },
 ]
 
-export default function CreateContent({ onComplete }) {
+export default function CreateContent({
+  onComplete,
+  defaultPatientName = '',
+  defaultDiagnosis = '',
+}) {
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedStyle, setSelectedStyle] = useState('friends')
   const [customDescription, setCustomDescription] = useState('')
+  const [patientName, setPatientName] = useState(defaultPatientName)
+  const [diagnosis, setDiagnosis] = useState(defaultDiagnosis || defaultRecoveryPlan.diagnosis || '')
   const [characters, setCharacters] = useState([])
   const [materials, setMaterials] = useState([])
   const [videos, setVideos] = useState([])
@@ -203,19 +210,57 @@ export default function CreateContent({ onComplete }) {
 
     const generatedVideos = []
     const totalEpisodes = episodeDefs.length
+    const styleText =
+      selectedStyle === 'custom'
+        ? customDescription
+        : (visualStyles.find((s) => s.id === selectedStyle)?.description || '')
 
     for (let i = 0; i < totalEpisodes; i++) {
       const ep = episodeDefs[i]
       setGenerationProgress(Math.round(((i + 1) / totalEpisodes) * 100))
 
       try {
+        // OpenEvidence: fetch light clinical evidence context to ground the script
+        let openEvidence = null
+        try {
+          const evidenceResult = await searchClinicalData({
+            patientName,
+            diagnosis,
+            episodeTitle: `Episode ${ep.episode}: ${ep.title}`,
+            dayTitle: ep.title,
+            dayDescription: ep.description,
+            instruction: 'Tailor the script to the patient.',
+          })
+          if (evidenceResult?.ok) {
+            openEvidence = evidenceResult.data
+          }
+        } catch {
+          // Evidence is optional; proceed without it
+        }
+
+        const basePrompt = [
+          ep.prompt,
+          styleText ? `\nVISUAL STYLE:\n${styleText}` : null,
+        ].filter(Boolean).join('\n\n')
+
         // Call HeyGen Video Agent API
         const res = await fetch('/api/heygen/generate-video', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            prompt: ep.prompt,
+            prompt: basePrompt,
             duration_sec: 30,
+            patient: {
+              name: patientName || 'Patient',
+              diagnosis: diagnosis || defaultRecoveryPlan.diagnosis,
+            },
+            episode: {
+              title: ep.title,
+              description: ep.description,
+              episode: ep.episode,
+            },
+            openEvidence,
+            use_sonar: true,
           }),
         })
         const data = await res.json()
@@ -230,8 +275,10 @@ export default function CreateContent({ onComplete }) {
           thumbnail: ep.thumbnail,
           videoId: videoId || null,
           videoUrl: null,
-          status: videoId ? 'processing' : 'failed',
-          errorMsg: videoId ? null : (data?.error || 'Failed to submit'),
+          status: videoId ? 'processing' : 'prompt_ready',
+          errorMsg: videoId ? null : (data?.error || null),
+          research: data?.medflix || null,
+          prompt: data?.medflix?.prompt || basePrompt,
         })
       } catch (e) {
         console.error(`Failed to generate episode ${ep.episode}:`, e)
@@ -246,6 +293,8 @@ export default function CreateContent({ onComplete }) {
           videoUrl: null,
           status: 'failed',
           errorMsg: e.message,
+          research: null,
+          prompt: null,
         })
       }
     }
@@ -265,8 +314,8 @@ export default function CreateContent({ onComplete }) {
     // Create recovery plan from generated videos
     const newPlan = {
       ...defaultRecoveryPlan,
-      patientName: 'Patient',
-      diagnosis: defaultRecoveryPlan.diagnosis,
+      patientName: patientName || 'Patient',
+      diagnosis: diagnosis || defaultRecoveryPlan.diagnosis,
       startDate: new Date().toISOString().split('T')[0],
       totalDays: videos.length,
       days: videos.map((video, idx) => ({
@@ -294,6 +343,8 @@ export default function CreateContent({ onComplete }) {
     setCurrentStep(0)
     setSelectedStyle('friends')
     setCustomDescription('')
+    setPatientName(defaultPatientName)
+    setDiagnosis(defaultDiagnosis || defaultRecoveryPlan.diagnosis || '')
     setCharacters([])
     setMaterials([])
     setVideos([])
@@ -357,6 +408,10 @@ export default function CreateContent({ onComplete }) {
       <div className="bg-white rounded-2xl border border-gray-200 p-8">
         {currentStep === 0 && (
           <SetupStep
+            patientName={patientName}
+            onPatientName={setPatientName}
+            diagnosis={diagnosis}
+            onDiagnosis={setDiagnosis}
             selectedStyle={selectedStyle}
             onSelectStyle={setSelectedStyle}
             customDescription={customDescription}
@@ -398,6 +453,8 @@ export default function CreateContent({ onComplete }) {
 
 // ----- Setup Step -----
 function SetupStep({
+  patientName, onPatientName,
+  diagnosis, onDiagnosis,
   selectedStyle, onSelectStyle,
   customDescription, onCustomDescription,
   characters, onAddCharacter, onUpdateCharacter, onRemoveCharacter, onCharacterImage,
@@ -406,6 +463,37 @@ function SetupStep({
 }) {
   return (
     <div className="space-y-8">
+      {/* Patient */}
+      <section>
+        <h3 className="text-lg font-bold text-gray-900 mb-1">Patient Context</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          This data is used to personalize the OpenEvidence + Perplexity Sonar research and the HeyGen prompt
+        </p>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Patient name</label>
+            <input
+              type="text"
+              value={patientName}
+              onChange={(e) => onPatientName(e.target.value)}
+              placeholder="e.g., Alex"
+              className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Diagnosis</label>
+            <input
+              type="text"
+              value={diagnosis}
+              onChange={(e) => onDiagnosis(e.target.value)}
+              placeholder="e.g., Type 2 Diabetes"
+              className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Visual Style */}
       <section>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Choose Visual Style</h3>
@@ -596,7 +684,18 @@ function SetupStep({
 function VideosStep({ videos, style, onComplete }) {
   const completed = videos.filter((v) => v.status === 'completed').length
   const processing = videos.filter((v) => v.status === 'processing').length
+  const promptReady = videos.filter((v) => v.status === 'prompt_ready').length
   const failed = videos.filter((v) => v.status === 'failed').length
+  const [expandedId, setExpandedId] = useState(null)
+
+  const copyPrompt = async (text) => {
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      // ignore
+    }
+  }
 
   return (
     <div>
@@ -608,7 +707,9 @@ function VideosStep({ videos, style, onComplete }) {
         <p className="text-gray-500">
           {processing > 0
             ? `${completed} of ${videos.length} videos ready — ${processing} still rendering with AI...`
-            : `All ${videos.length} video episodes in ${style?.name || 'your'} style`}
+            : promptReady > 0
+              ? `${promptReady} prompts ready${failed ? ` • ${failed} failed` : ''}`
+              : `All ${videos.length} video episodes in ${style?.name || 'your'} style`}
         </p>
       </div>
 
@@ -656,10 +757,44 @@ function VideosStep({ videos, style, onComplete }) {
               {video.status === 'failed' && video.errorMsg && (
                 <p className="text-xs text-red-500 mt-1">{video.errorMsg}</p>
               )}
+
+              {video.prompt && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setExpandedId(expandedId === video.id ? null : video.id)}
+                      className="text-xs font-medium text-medflix-dark hover:text-medflix-accent transition-colors"
+                      type="button"
+                    >
+                      {expandedId === video.id ? 'Hide prompt' : 'View prompt'}
+                    </button>
+                    <span className="text-xs text-gray-400">•</span>
+                    <button
+                      onClick={() => copyPrompt(video.prompt)}
+                      className="text-xs font-medium text-medflix-dark hover:text-medflix-accent transition-colors"
+                      type="button"
+                    >
+                      Copy prompt
+                    </button>
+                    {video?.research?.used_sonar && (
+                      <span className="text-[11px] text-gray-400 ml-1">
+                        (Sonar: {video.research?.sonar_model || 'sonar'})
+                      </span>
+                    )}
+                  </div>
+
+                  {expandedId === video.id && (
+                    <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded-xl border border-gray-200 bg-white p-3 text-[11px] leading-relaxed text-gray-700">
+                      {video.prompt}
+                    </pre>
+                  )}
+                </div>
+              )}
             </div>
             <div className={`flex items-center gap-1.5 flex-shrink-0 ${
               video.status === 'completed' ? 'text-green-600' :
               video.status === 'processing' ? 'text-yellow-500' :
+              video.status === 'prompt_ready' ? 'text-blue-600' :
               'text-red-500'
             }`}>
               {video.status === 'completed' ? (
@@ -671,6 +806,11 @@ function VideosStep({ videos, style, onComplete }) {
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-xs font-medium">Rendering...</span>
+                </>
+              ) : video.status === 'prompt_ready' ? (
+                <>
+                  <PenLine className="w-4 h-4" />
+                  <span className="text-xs font-medium">Prompt ready</span>
                 </>
               ) : (
                 <>
