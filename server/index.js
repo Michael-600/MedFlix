@@ -1,7 +1,6 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import { Poke } from 'poke'
 import twilio from 'twilio'
 import { getPerplexityKey, perplexitySonarChat } from './perplexitySonar.js'
 import { buildHeyGenPrompt, buildPerplexityDeepResearchPrompt, safePreview } from './heygenPrompt.js'
@@ -20,9 +19,6 @@ const HEYGEN_DISABLED =
   String(process.env.DISABLE_HEYGEN || '').toLowerCase() === 'true'
 const HEYGEN_BASE = 'https://api.heygen.com'
 const LIVEAVATAR_BASE = 'https://api.liveavatar.com'
-
-// ─── Poke SDK init (AI message crafting) ────────────────
-const poke = POKE_API_KEY ? new Poke({ apiKey: POKE_API_KEY }) : null
 
 // ─── Twilio init (SMS delivery) ─────────────────────────
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID
