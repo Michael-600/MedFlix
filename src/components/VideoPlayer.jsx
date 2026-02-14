@@ -1,5 +1,17 @@
-import { useState, useEffect } from 'react'
-import { X, Play, Pause, SkipForward, Volume2, Maximize2, Video, CheckCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import {
+  X,
+  Play,
+  Pause,
+  SkipForward,
+  Volume2,
+  Maximize2,
+  Video,
+  CheckCircle,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react'
 import { searchClinicalData } from '../api/clinicalDataTool'
 
 export default function VideoPlayer({
@@ -9,12 +21,82 @@ export default function VideoPlayer({
   onClose,
   onComplete,
   onNavigateToAvatar,
+  onVideoUrlResolved,
 }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [evidenceStatus, setEvidenceStatus] = useState('idle')
   const [evidence, setEvidence] = useState(null)
   const [evidenceError, setEvidenceError] = useState(null)
+  const [videoUrl, setVideoUrl] = useState(day?.videoUrl || null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [fetchError, setFetchError] = useState(null)
+  const [videoLoadError, setVideoLoadError] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const videoRef = useRef(null)
+  const hasRealVideo = Boolean(videoUrl)
+
+  const fetchVideoUrl = async (videoId) => {
+    if (!videoId || isLoading) return
+    setIsLoading(true)
+    setFetchError(null)
+
+    try {
+      const res = await fetch(`/api/heygen/video-status/${videoId}`)
+      const data = await res.json()
+      const status = data?.data?.status
+      const resolvedUrl = data?.data?.video_url
+
+      if (status === 'completed' && resolvedUrl) {
+        setVideoUrl(resolvedUrl)
+        setFetchError(null)
+        setVideoLoadError(false)
+        if (onVideoUrlResolved && day?.day) {
+          onVideoUrlResolved(day.day, resolvedUrl)
+        }
+      } else if (status === 'failed') {
+        setFetchError('generation_failed')
+      } else if (status === 'processing' || status === 'pending' || status === 'queued') {
+        setFetchError('still_processing')
+      } else {
+        setFetchError('still_processing')
+      }
+    } catch (e) {
+      console.warn('[VideoPlayer] Failed to fetch video URL:', e)
+      setFetchError('network')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Reset state when switching to a different day
+  useEffect(() => {
+    setVideoUrl(day?.videoUrl || null)
+    setIsLoading(false)
+    setFetchError(null)
+    setVideoLoadError(false)
+    setIsPlaying(false)
+    setProgress(0)
+    setCurrentTime(0)
+    setDuration(0)
+  }, [day])
+
+  // Auto-fetch video URL when available but missing
+  useEffect(() => {
+    if (day?.videoId && !videoUrl) {
+      fetchVideoUrl(day.videoId)
+    }
+  }, [day?.videoId, videoUrl])
+
+  // Poll if still processing
+  useEffect(() => {
+    if (!day?.videoId || videoUrl || fetchError !== 'still_processing') return
+    const timer = setInterval(() => {
+      fetchVideoUrl(day.videoId)
+    }, 15000)
+    return () => clearInterval(timer)
+  }, [day?.videoId, videoUrl, fetchError])
 
   useEffect(() => {
     if (hasRealVideo || !isPlaying) return
