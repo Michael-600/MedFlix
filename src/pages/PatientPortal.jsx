@@ -78,7 +78,13 @@ export default function PatientPortal() {
         {activeTab === 'recovery' && (
           <>
             {hasCreatedContent && plan ? (
-              <RecoveryPlan plan={plan} onUpdate={updatePlan} onNavigateToAvatar={() => setActiveTab('avatar')} />
+              <RecoveryPlan
+                plan={plan}
+                patientName={user?.name}
+                patientDiagnosis={plan?.diagnosis || user?.diagnosis}
+                onUpdate={updatePlan}
+                onNavigateToAvatar={() => setActiveTab('avatar')}
+              />
             ) : (
               <EmptyState onCreateClick={() => setShowCreateModal(true)} />
             )}
@@ -149,4 +155,3 @@ function EmptyState({ onCreateClick }) {
     </div>
   )
 }
-

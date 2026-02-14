@@ -67,7 +67,7 @@ export const visualStyles = [
 
 export const defaultRecoveryPlan = {
   patientName: '',
-  diagnosis: '',
+  diagnosis: 'Type 2 Diabetes',
   startDate: new Date().toISOString().split('T')[0],
   totalDays: 7,
   days: [

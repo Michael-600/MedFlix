@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react'
 import { X, Play, Pause, SkipForward, Volume2, Maximize2, Video, CheckCircle } from 'lucide-react'
+import { searchClinicalData } from '../api/clinicalDataTool'
 
-export default function VideoPlayer({ day, onClose, onComplete, onNavigateToAvatar }) {
+export default function VideoPlayer({
+  day,
+  patientName,
+  patientDiagnosis,
+  onClose,
+  onComplete,
+  onNavigateToAvatar,
+}) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [evidenceStatus, setEvidenceStatus] = useState('idle')
+  const [evidence, setEvidence] = useState(null)
+  const [evidenceError, setEvidenceError] = useState(null)
 
   useEffect(() => {
     if (!isPlaying) return
@@ -20,21 +31,52 @@ export default function VideoPlayer({ day, onClose, onComplete, onNavigateToAvat
     return () => clearInterval(interval)
   }, [isPlaying])
 
+  useEffect(() => {
+    let active = true
+    setEvidenceStatus('loading')
+    setEvidenceError(null)
+
+    searchClinicalData({
+      patientName,
+      diagnosis: patientDiagnosis,
+      episodeTitle: day?.episodeTitle,
+      dayTitle: day?.title,
+      dayDescription: day?.description,
+      instruction: 'Tailor the script to the patient.',
+    })
+      .then((result) => {
+        if (!active) return
+        if (result.ok) {
+          setEvidence(result.data)
+          setEvidenceStatus('ready')
+        } else {
+          setEvidenceStatus('error')
+          setEvidenceError(result.error || 'unknown_error')
+        }
+      })
+      .catch(() => {
+        if (!active) return
+        setEvidenceStatus('error')
+        setEvidenceError('request_failed')
+      })
+
+    return () => {
+      active = false
+    }
+  }, [day, patientName, patientDiagnosis])
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 video-overlay flex items-center justify-center p-6">
-      <div className="w-full max-w-4xl animate-slideUp">
-        {/* Close button */}
-        <div className="flex justify-end mb-3">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-slideUp">
+        {/* Video Area */}
+        <div className="bg-medflix-dark rounded-2xl overflow-hidden shadow-2xl relative">
           <button
             onClick={onClose}
-            className="text-white/60 hover:text-white p-1 transition-colors"
+            className="absolute top-4 right-4 text-white/70 hover:text-white p-1 transition-colors z-10"
+            aria-label="Close video"
           >
             <X className="w-6 h-6" />
           </button>
-        </div>
-
-        {/* Video Area */}
-        <div className="bg-medflix-dark rounded-2xl overflow-hidden shadow-2xl">
           {/* Video Content */}
           <div className="relative aspect-video bg-gradient-to-br from-medflix-dark to-gray-900 flex items-center justify-center">
             {/* Simulated video content */}
@@ -161,6 +203,36 @@ export default function VideoPlayer({ day, onClose, onComplete, onNavigateToAvat
               <button className="text-white/60 hover:text-white transition-colors">
                 <Maximize2 className="w-4 h-4" />
               </button>
+            </div>
+          </div>
+
+          {/* Clinical Data Highlights */}
+          <div className="px-5 py-4 bg-medflix-darker border-t border-white/10">
+            <div className="grid gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+                  Clinical Data Highlights
+                </p>
+                {evidenceStatus === 'loading' && (
+                  <p className="text-sm text-gray-400">Searching clinical data sources...</p>
+                )}
+                {evidenceStatus === 'error' && (
+                  <p className="text-sm text-amber-300">
+                    Unable to fetch evidence right now ({evidenceError}).
+                  </p>
+                )}
+                {evidenceStatus === 'ready' ? (
+                  <>
+                    <p className="text-sm text-gray-300 leading-relaxed">
+                      {evidence?.summary || 'No evidence summary returned.'}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    Evidence summary will appear here once available.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
