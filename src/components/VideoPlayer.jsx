@@ -1,36 +1,9 @@
 import { useState, useEffect } from 'react'
-import { X, Play, Pause, SkipForward, Volume2, Maximize2, CheckCircle } from 'lucide-react'
+import { X, Play, Pause, SkipForward, Volume2, Maximize2, Video, CheckCircle } from 'lucide-react'
 
-export default function VideoPlayer({ day, onClose, onComplete }) {
+export default function VideoPlayer({ day, onClose, onComplete, onNavigateToAvatar }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [showQuestion, setShowQuestion] = useState(false)
-  const [answered, setAnswered] = useState(false)
-  const [questionIndex, setQuestionIndex] = useState(0)
-
-  // Simulated video questions (checkpoint-style like Neuroflix)
-  const questions = [
-    {
-      question: `Based on today's episode about "${day.title}", which of the following is most important?`,
-      options: [
-        'Follow your care team\'s specific instructions',
-        'Only rely on internet research',
-        'Skip medications if feeling better',
-        'Avoid all physical activity',
-      ],
-      correct: 0,
-    },
-    {
-      question: 'When should you contact your healthcare provider?',
-      options: [
-        'Only during scheduled appointments',
-        'When experiencing unexpected symptoms or concerns',
-        'Never, unless it\'s an emergency',
-        'Only when medications run out',
-      ],
-      correct: 1,
-    },
-  ]
 
   useEffect(() => {
     if (!isPlaying) return
@@ -41,29 +14,11 @@ export default function VideoPlayer({ day, onClose, onComplete }) {
           clearInterval(interval)
           return 100
         }
-        // Show question at 50%
-        if (p >= 48 && p < 52 && !showQuestion && !answered) {
-          setIsPlaying(false)
-          setShowQuestion(true)
-          return 50
-        }
         return p + 0.5
       })
     }, 100)
     return () => clearInterval(interval)
-  }, [isPlaying, showQuestion, answered])
-
-  const handleAnswer = (idx) => {
-    setAnswered(true)
-    setTimeout(() => {
-      setShowQuestion(false)
-      setAnswered(false)
-      setIsPlaying(true)
-      setQuestionIndex((q) => q + 1)
-    }, 1500)
-  }
-
-  const currentQuestion = questions[questionIndex % questions.length]
+  }, [isPlaying])
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 video-overlay flex items-center justify-center p-6">
@@ -113,54 +68,10 @@ export default function VideoPlayer({ day, onClose, onComplete }) {
               )}
             </div>
 
-            {/* Question Overlay */}
-            {showQuestion && (
-              <div className="absolute inset-0 bg-black/90 flex items-center justify-center p-8 animate-fadeIn">
-                <div className="w-full max-w-lg">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-2 h-2 bg-medflix-accent rounded-full animate-pulse-soft" />
-                    <span className="text-medflix-accent text-sm font-medium">Knowledge Check</span>
-                  </div>
-                  <h4 className="text-white text-lg font-medium mb-6">
-                    {currentQuestion.question}
-                  </h4>
-                  <div className="space-y-3">
-                    {currentQuestion.options.map((opt, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleAnswer(i)}
-                        disabled={answered}
-                        className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition-all ${
-                          answered && i === currentQuestion.correct
-                            ? 'border-green-500 bg-green-500/10 text-green-400'
-                            : answered
-                            ? 'border-gray-700 text-gray-500 opacity-50'
-                            : 'border-gray-600 text-gray-300 hover:border-medflix-accent hover:bg-medflix-accent/5'
-                        }`}
-                      >
-                        <span className="font-medium mr-2">
-                          {String.fromCharCode(65 + i)}.
-                        </span>
-                        {opt}
-                        {answered && i === currentQuestion.correct && (
-                          <CheckCircle className="inline w-4 h-4 ml-2 text-green-500" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  {answered && (
-                    <p className="text-green-400 text-sm mt-4 animate-fadeIn">
-                      Correct! Continuing episode...
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Completion overlay */}
             {progress >= 100 && (
               <div className="absolute inset-0 bg-black/90 flex items-center justify-center animate-fadeIn">
-                <div className="text-center">
+                <div className="text-center max-w-md">
                   <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CheckCircle className="w-8 h-8 text-green-500" />
                   </div>
@@ -168,6 +79,28 @@ export default function VideoPlayer({ day, onClose, onComplete }) {
                   <p className="text-gray-400 text-sm mb-6">
                     Great job! You've finished Day {day.day}.
                   </p>
+                  
+                  {/* Call-to-action for Live Avatar */}
+                  <div className="bg-medflix-accent/10 border border-medflix-accent/30 rounded-xl p-4 mb-6">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Video className="w-5 h-5 text-medflix-accent" />
+                      <p className="text-white font-medium text-sm">Have Questions?</p>
+                    </div>
+                    <p className="text-gray-400 text-xs mb-3">
+                      Chat with your AI health companion for personalized answers
+                    </p>
+                    <button
+                      onClick={() => {
+                        onClose()
+                        if (onNavigateToAvatar) onNavigateToAvatar()
+                      }}
+                      className="w-full px-4 py-2.5 bg-medflix-accent text-white rounded-lg font-medium hover:bg-medflix-accentLight transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Video className="w-4 h-4" />
+                      Talk to Live Avatar
+                    </button>
+                  </div>
+
                   <div className="flex gap-3 justify-center">
                     <button
                       onClick={onComplete}
@@ -206,7 +139,7 @@ export default function VideoPlayer({ day, onClose, onComplete }) {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setIsPlaying(!isPlaying)}
-                  disabled={showQuestion || progress >= 100}
+                  disabled={progress >= 100}
                   className="w-9 h-9 flex items-center justify-center text-white hover:text-medflix-accent transition-colors disabled:opacity-50"
                 >
                   {isPlaying ? (
