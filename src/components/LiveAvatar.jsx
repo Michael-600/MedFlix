@@ -35,6 +35,8 @@ export default function LiveAvatar() {
   const seenTextsRef = useRef(new Set())
   // Track which track SIDs we've already attached to avoid duplicates
   const attachedTrackSids = useRef(new Set())
+  // Track texts we've already forwarded to LLM to prevent infinite loops
+  const forwardedTextsRef = useRef(new Set())
 
   // ── Call duration timer ─────────────────────────────
   useEffect(() => {
@@ -155,6 +157,7 @@ export default function LiveAvatar() {
     setCaption('')
     seenTextsRef.current.clear()
     attachedTrackSids.current.clear()
+    forwardedTextsRef.current.clear()
 
     try {
       // 0. Cleanup stale sessions
@@ -288,9 +291,17 @@ export default function LiveAvatar() {
       case 'user.transcription':
         if (text) {
           showCaption(text, 'user')
-          // Auto-forward to LLM so the avatar responds
-          console.log(`[LiveAvatar] → Forwarding to LLM: "${text}"`)
-          sendCommand('avatar.speak_response', { text })
+          // Only forward each unique text ONCE to prevent infinite loops
+          // (the API echoes back user.transcription after avatar.speak_response)
+          if (!forwardedTextsRef.current.has(text)) {
+            forwardedTextsRef.current.add(text)
+            // Clear after 10s so the same phrase can be said again later
+            setTimeout(() => forwardedTextsRef.current.delete(text), 10000)
+            console.log(`[LiveAvatar] → Forwarding to LLM: "${text}"`)
+            sendCommand('avatar.speak_response', { text })
+          } else {
+            console.log(`[LiveAvatar] Skip duplicate forward: "${text}"`)
+          }
         }
         break
       case 'avatar.transcription':  if (text) showCaption(text, 'avatar'); break
@@ -331,6 +342,7 @@ export default function LiveAvatar() {
     setCaption('')
     seenTextsRef.current.clear()
     attachedTrackSids.current.clear()
+    forwardedTextsRef.current.clear()
   }
 
   const cleanupAll = () => {
