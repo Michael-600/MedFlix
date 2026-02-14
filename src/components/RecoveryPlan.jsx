@@ -1,11 +1,52 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import DayCard from './DayCard'
 import VideoPlayer from './VideoPlayer'
 
 export default function RecoveryPlan({ plan, onUpdate, onNavigateToAvatar }) {
   const [showVideo, setShowVideo] = useState(null)
+  const refreshedRef = useRef(false)
 
   const completedCount = plan.days.filter(d => d.completed).length
+
+  // On mount, auto-refresh video URLs for any day that has videoId but no videoUrl
+  useEffect(() => {
+    if (refreshedRef.current) return
+    refreshedRef.current = true
+
+    const daysNeedingUrl = plan.days.filter((d) => d.videoId && !d.videoUrl)
+    if (daysNeedingUrl.length === 0) return
+
+    console.log(`[RecoveryPlan] ${daysNeedingUrl.length} videos need URL refresh`)
+
+    const refreshUrls = async () => {
+      let changed = false
+      const updatedDays = [...plan.days]
+
+      for (let i = 0; i < updatedDays.length; i++) {
+        const day = updatedDays[i]
+        if (day.videoId && !day.videoUrl) {
+          try {
+            const res = await fetch(`/api/heygen/video-status/${day.videoId}`)
+            const data = await res.json()
+            if (data?.data?.status === 'completed' && data?.data?.video_url) {
+              updatedDays[i] = { ...day, videoUrl: data.data.video_url }
+              changed = true
+              console.log(`[RecoveryPlan] Day ${day.day} URL resolved`)
+            }
+          } catch (e) {
+            console.warn(`[RecoveryPlan] Failed to fetch video URL for day ${day.day}:`, e)
+          }
+        }
+      }
+
+      if (changed) {
+        const updatedPlan = { ...plan, days: updatedDays }
+        onUpdate(updatedPlan)
+      }
+    }
+
+    refreshUrls()
+  }, [plan.days])
 
   const handleCompleteDay = (dayIndex) => {
     const updated = { ...plan, days: [...plan.days] }
@@ -34,6 +75,17 @@ export default function RecoveryPlan({ plan, onUpdate, onNavigateToAvatar }) {
 
   const handleWatchVideo = (dayIndex) => {
     setShowVideo(dayIndex)
+  }
+
+  // When VideoPlayer resolves a video URL, persist it to the plan
+  const handleVideoUrlResolved = (dayNumber, url) => {
+    const updated = { ...plan, days: [...plan.days] }
+    const idx = updated.days.findIndex((d) => d.day === dayNumber)
+    if (idx !== -1) {
+      updated.days[idx] = { ...updated.days[idx], videoUrl: url }
+      onUpdate(updated)
+      console.log(`[RecoveryPlan] Persisted video URL for day ${dayNumber}`)
+    }
   }
 
   const formatDate = (dateStr) => {
@@ -87,6 +139,7 @@ export default function RecoveryPlan({ plan, onUpdate, onNavigateToAvatar }) {
             setShowVideo(null)
           }}
           onNavigateToAvatar={onNavigateToAvatar}
+          onVideoUrlResolved={handleVideoUrlResolved}
         />
       )}
     </div>

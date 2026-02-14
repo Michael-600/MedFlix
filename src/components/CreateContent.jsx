@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { visualStyles, defaultRecoveryPlan } from '../data/mockData'
 import {
   Palette, Users, Upload, Film, CheckCircle, PenLine,
-  Plus, FileText, Image as ImageIcon, X, Trash2,
+  Plus, FileText, Image as ImageIcon, X, Trash2, Loader2, RefreshCw,
 } from 'lucide-react'
 
 const STEPS = [
@@ -76,81 +76,185 @@ export default function CreateContent({ onComplete }) {
     setMaterials((prev) => prev.filter((m) => m.id !== id))
   }
 
-  const handleGenerateVideos = () => {
+  // Episode definitions for structured generation
+  const episodeDefs = [
+    {
+      episode: 1,
+      title: 'Introduction',
+      description: 'Meet Dr. Sarah as she welcomes you and introduces your diagnosis in a clear, compassionate way.',
+      thumbnail: '🎬',
+      prompt: 'Create a warm, compassionate 30-second medical introduction video. A friendly female doctor presenter welcomes the patient, introduces herself, and explains that she will guide them through their recovery journey. Tone: reassuring, professional, and empathetic. Medical setting with clean background.',
+    },
+    {
+      episode: 2,
+      title: 'Understanding Your Condition',
+      description: 'An explainer breaking down the medical terminology into simple, visual concepts.',
+      thumbnail: '📚',
+      prompt: 'Create a 45-second educational medical explainer video. A presenter explains common medical terminology in simple language using visual aids and analogies. Cover: what the condition means, how it affects the body, and why the treatment plan is important. Tone: clear, educational, patient-friendly.',
+    },
+    {
+      episode: 3,
+      title: 'Treatment Overview',
+      description: 'A visual walkthrough of the treatment plan with clear timelines and milestones.',
+      thumbnail: '💊',
+      prompt: 'Create a 40-second treatment overview video. A medical presenter walks through the treatment plan step by step, covering medications, schedules, and key milestones. Use a timeline visual metaphor. Tone: organized, hopeful, reassuring.',
+    },
+    {
+      episode: 4,
+      title: 'What to Expect',
+      description: 'Practical day-to-day guidance for what patients should prepare for.',
+      thumbnail: '📋',
+      prompt: 'Create a 40-second patient preparation video. Cover what to expect during the first week of treatment or recovery: common sensations, activity levels, and tips for daily comfort. Tone: practical, honest, supportive.',
+    },
+    {
+      episode: 5,
+      title: 'Home Care Guide',
+      description: 'Step-by-step instructions for managing your recovery at home.',
+      thumbnail: '🏠',
+      prompt: 'Create a 40-second home care guide video. A medical presenter explains essential at-home recovery steps: wound care, medication schedules, nutrition tips, and rest guidelines. Tone: caring, instructional, empowering.',
+    },
+    {
+      episode: 6,
+      title: 'Warning Signs',
+      description: 'Learn what symptoms to watch for and when to contact your care team.',
+      thumbnail: '⚠️',
+      prompt: 'Create a 30-second warning signs video. A medical presenter clearly explains symptoms that require immediate medical attention: fever, unusual swelling, severe pain, breathing difficulty. Include when and how to contact the care team. Tone: serious but calm, clear, actionable.',
+    },
+    {
+      episode: 7,
+      title: 'Recovery Milestones',
+      description: 'Track your progress and celebrate your recovery journey.',
+      thumbnail: '🎯',
+      prompt: 'Create a 30-second recovery milestones video. A presenter congratulates the patient on starting their journey, outlines key recovery milestones week by week, and encourages them to stay positive. End with an uplifting message. Tone: encouraging, celebratory, motivational.',
+    },
+  ]
+
+  const pollingRef = useRef(null)
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+    }
+  }, [])
+
+  // Background polling: check video statuses every 10s
+  useEffect(() => {
+    if (pollingRef.current) clearInterval(pollingRef.current)
+
+    const hasProcessing = videos.some((v) => v.status === 'processing')
+    if (!hasProcessing || videos.length === 0) return
+
+    pollingRef.current = setInterval(async () => {
+      let changed = false
+      const updated = [...videos]
+
+      for (let i = 0; i < updated.length; i++) {
+        const v = updated[i]
+        if (v.videoId && v.status === 'processing') {
+          try {
+            const statusRes = await fetch(`/api/heygen/video-status/${v.videoId}`)
+            const statusData = await statusRes.json()
+            const status = statusData?.data?.status
+
+            if (status === 'completed') {
+              updated[i] = {
+                ...v,
+                status: 'completed',
+                videoUrl: statusData.data.video_url,
+                duration: statusData.data.duration
+                  ? `${Math.round(statusData.data.duration)}s`
+                  : v.duration,
+              }
+              changed = true
+            } else if (status === 'failed') {
+              updated[i] = {
+                ...v,
+                status: 'failed',
+                errorMsg: statusData.data?.error?.message || 'Generation failed',
+              }
+              changed = true
+            }
+          } catch {
+            // Will retry next interval
+          }
+        }
+      }
+
+      if (changed) setVideos(updated)
+
+      // Stop polling if all done
+      const stillProcessing = updated.some((v) => v.status === 'processing')
+      if (!stillProcessing && pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }, 10000)
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+    }
+  }, [videos])
+
+  const handleGenerateVideos = async () => {
     if (materials.length === 0) return
     setIsGenerating(true)
     setGenerationProgress(0)
 
-    const interval = setInterval(() => {
-      setGenerationProgress((p) => {
-        if (p >= 100) {
-          clearInterval(interval)
-          setIsGenerating(false)
-          // Generate mock videos
-          setVideos([
-            {
-              id: '1',
-              episode: 1,
-              title: 'Introduction',
-              description: 'Meet Dr. Sarah as she welcomes you and introduces your diagnosis in a clear, compassionate way.',
-              duration: '45s',
-              thumbnail: '🎬',
-            },
-            {
-              id: '2',
-              episode: 2,
-              title: 'Understanding Your Condition',
-              description: 'An animated explainer breaking down the medical terminology into simple, visual concepts.',
-              duration: '60s',
-              thumbnail: '📚',
-            },
-            {
-              id: '3',
-              episode: 3,
-              title: 'Treatment Overview',
-              description: 'A visual walkthrough of the treatment plan with clear timelines and milestones.',
-              duration: '50s',
-              thumbnail: '💊',
-            },
-            {
-              id: '4',
-              episode: 4,
-              title: 'What to Expect',
-              description: 'Practical day-to-day guidance for what patients should prepare for.',
-              duration: '55s',
-              thumbnail: '📋',
-            },
-            {
-              id: '5',
-              episode: 5,
-              title: 'Home Care Guide',
-              description: 'Step-by-step instructions for managing your recovery at home.',
-              duration: '50s',
-              thumbnail: '🏠',
-            },
-            {
-              id: '6',
-              episode: 6,
-              title: 'Warning Signs',
-              description: 'Learn what symptoms to watch for and when to contact your care team.',
-              duration: '40s',
-              thumbnail: '⚠️',
-            },
-            {
-              id: '7',
-              episode: 7,
-              title: 'Recovery Milestones',
-              description: 'Track your progress and celebrate your recovery journey.',
-              duration: '30s',
-              thumbnail: '🎯',
-            },
-          ])
-          setCurrentStep(1)
-          return 100
-        }
-        return p + 1
-      })
-    }, 80)
+    const generatedVideos = []
+    const totalEpisodes = episodeDefs.length
+
+    for (let i = 0; i < totalEpisodes; i++) {
+      const ep = episodeDefs[i]
+      setGenerationProgress(Math.round(((i + 1) / totalEpisodes) * 100))
+
+      try {
+        // Call HeyGen Video Agent API
+        const res = await fetch('/api/heygen/generate-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: ep.prompt,
+            duration_sec: 30,
+          }),
+        })
+        const data = await res.json()
+        const videoId = data?.data?.video_id
+
+        generatedVideos.push({
+          id: videoId || `local-${i + 1}`,
+          episode: ep.episode,
+          title: ep.title,
+          description: ep.description,
+          duration: '30-45s',
+          thumbnail: ep.thumbnail,
+          videoId: videoId || null,
+          videoUrl: null,
+          status: videoId ? 'processing' : 'failed',
+          errorMsg: videoId ? null : (data?.error || 'Failed to submit'),
+        })
+      } catch (e) {
+        console.error(`Failed to generate episode ${ep.episode}:`, e)
+        generatedVideos.push({
+          id: `local-${i + 1}`,
+          episode: ep.episode,
+          title: ep.title,
+          description: ep.description,
+          duration: '30-45s',
+          thumbnail: ep.thumbnail,
+          videoId: null,
+          videoUrl: null,
+          status: 'failed',
+          errorMsg: e.message,
+        })
+      }
+    }
+
+    // Immediately move to Videos step — polling happens in background via useEffect
+    setVideos(generatedVideos)
+    setIsGenerating(false)
+    setGenerationProgress(100)
+    setCurrentStep(1)
   }
 
   const handleComplete = () => {
@@ -176,7 +280,8 @@ export default function CreateContent({ onComplete }) {
           { id: `c${idx}-2`, text: 'Complete knowledge check questions', checked: false },
           { id: `c${idx}-3`, text: 'Review key takeaways', checked: false },
         ],
-        videoUrl: null,
+        videoUrl: video.videoUrl || null,
+        videoId: video.videoId || null,
         episodeTitle: `Episode ${idx + 1}: ${video.title}`,
       })),
     }
@@ -489,17 +594,46 @@ function SetupStep({
 
 // ----- Videos Step -----
 function VideosStep({ videos, style, onComplete }) {
+  const completed = videos.filter((v) => v.status === 'completed').length
+  const processing = videos.filter((v) => v.status === 'processing').length
+  const failed = videos.filter((v) => v.status === 'failed').length
+
   return (
     <div>
       <div className="text-center mb-8">
         <div className="w-16 h-16 bg-medflix-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
           <Film className="w-8 h-8 text-medflix-accent" />
         </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">Generated Video Episodes</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Video Episodes</h3>
         <p className="text-gray-500">
-          Review your {videos.length} personalized video episodes in <strong>{style?.name}</strong> style
+          {processing > 0
+            ? `${completed} of ${videos.length} videos ready — ${processing} still rendering with AI...`
+            : `All ${videos.length} video episodes in ${style?.name || 'your'} style`}
         </p>
       </div>
+
+      {/* Status summary bar */}
+      {processing > 0 && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+          <div className="flex items-center gap-3">
+            <Loader2 className="w-5 h-5 text-yellow-600 animate-spin flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-yellow-800">
+                AI is generating your videos — this takes 1-3 minutes per episode
+              </p>
+              <p className="text-xs text-yellow-600 mt-1">
+                Status updates automatically. You can continue to publish — videos will be ready when you view them.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 bg-yellow-200 rounded-full h-2">
+            <div
+              className="bg-yellow-500 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${((completed + failed) / videos.length) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3 mb-8">
         {videos.map((video) => (
@@ -519,10 +653,31 @@ function VideosStep({ videos, style, onComplete }) {
               </div>
               <h4 className="font-semibold text-gray-900 mb-1">{video.title}</h4>
               <p className="text-sm text-gray-600 leading-relaxed">{video.description}</p>
+              {video.status === 'failed' && video.errorMsg && (
+                <p className="text-xs text-red-500 mt-1">{video.errorMsg}</p>
+              )}
             </div>
-            <div className="flex items-center gap-1 text-green-600">
-              <CheckCircle className="w-5 h-5" />
-              <span className="text-xs font-medium">Ready</span>
+            <div className={`flex items-center gap-1.5 flex-shrink-0 ${
+              video.status === 'completed' ? 'text-green-600' :
+              video.status === 'processing' ? 'text-yellow-500' :
+              'text-red-500'
+            }`}>
+              {video.status === 'completed' ? (
+                <>
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="text-xs font-medium">Ready</span>
+                </>
+              ) : video.status === 'processing' ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-xs font-medium">Rendering...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  <span className="text-xs font-medium">Failed</span>
+                </>
+              )}
             </div>
           </div>
         ))}
@@ -532,9 +687,14 @@ function VideosStep({ videos, style, onComplete }) {
         onClick={onComplete}
         className="w-full py-3.5 bg-medflix-accent text-white rounded-xl font-semibold hover:bg-medflix-accentLight transition-colors flex items-center justify-center gap-2"
       >
-        Continue to Complete
+        {processing > 0 ? 'Continue Anyway' : 'Continue to Complete'}
         <CheckCircle className="w-5 h-5" />
       </button>
+      {processing > 0 && (
+        <p className="text-xs text-center text-gray-500 mt-2">
+          Videos will continue rendering in the background
+        </p>
+      )}
     </div>
   )
 }
