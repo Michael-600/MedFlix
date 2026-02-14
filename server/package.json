@@ -4,11 +4,16 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "mcp": "node pokeMcp.js"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "poke": "^0.2.0",
+    "twilio": "^5.5.0",
+    "zod": "^3.22.0"
   }
 }

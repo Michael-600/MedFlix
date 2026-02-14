@@ -6,7 +6,8 @@ import RecoveryPlan from '../components/RecoveryPlan'
 import AIAssistant from '../components/AIAssistant'
 import LiveAvatar from '../components/LiveAvatar'
 import CreateContent from '../components/CreateContent'
-import { CalendarDays, MessageCircle, Plus, Film, Video } from 'lucide-react'
+import MedicationReminders from '../components/MedicationReminders'
+import { CalendarDays, MessageCircle, Plus, Film, Video, Bell } from 'lucide-react'
 
 export default function PatientPortal() {
   const { user } = useAuth()
@@ -45,6 +46,7 @@ export default function PatientPortal() {
     { id: 'recovery', label: 'Recovery Plan', icon: CalendarDays },
     { id: 'avatar', label: 'Live Avatar', icon: Video },
     { id: 'assistant', label: 'AI Assistant', icon: MessageCircle },
+    { id: 'reminders', label: 'Medication Reminders', icon: Bell },
   ]
 
   return (
@@ -95,6 +97,9 @@ export default function PatientPortal() {
         )}
         {activeTab === 'assistant' && (
           <AIAssistant patientName={user?.name} diagnosis={plan?.diagnosis} />
+        )}
+        {activeTab === 'reminders' && (
+          <MedicationReminders patientName={user?.name} diagnosis={plan?.diagnosis || user?.diagnosis} userId={user?.id} />
         )}
       </main>
 
