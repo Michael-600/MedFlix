@@ -1,67 +1,103 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Play, Pause, SkipForward, Volume2, Maximize2, Video, CheckCircle, Loader2, RefreshCw, AlertCircle } from 'lucide-react'
+import {
+  X,
+  Play,
+  Pause,
+  SkipForward,
+  Volume2,
+  Maximize2,
+  Video,
+  CheckCircle,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react'
+import { searchClinicalData } from '../api/clinicalDataTool'
 
-export default function VideoPlayer({ day, onClose, onComplete, onNavigateToAvatar, onVideoUrlResolved }) {
+export default function VideoPlayer({
+  day,
+  patientName,
+  patientDiagnosis,
+  onClose,
+  onComplete,
+  onNavigateToAvatar,
+  onVideoUrlResolved,
+}) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [videoUrl, setVideoUrl] = useState(day.videoUrl || null)
+  const [evidenceStatus, setEvidenceStatus] = useState('idle')
+  const [evidence, setEvidence] = useState(null)
+  const [evidenceError, setEvidenceError] = useState(null)
+  const [videoUrl, setVideoUrl] = useState(day?.videoUrl || null)
   const [isLoading, setIsLoading] = useState(false)
-  const [hasRealVideo, setHasRealVideo] = useState(!!day.videoUrl)
-  const [duration, setDuration] = useState(0)
-  const [currentTime, setCurrentTime] = useState(0)
   const [fetchError, setFetchError] = useState(null)
   const [videoLoadError, setVideoLoadError] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
   const videoRef = useRef(null)
-  const retryCountRef = useRef(0)
-
-  // If we have a videoId but no URL, try to fetch the URL
-  useEffect(() => {
-    if (day.videoId && !videoUrl) {
-      fetchVideoUrl(day.videoId)
-    }
-  }, [day.videoId])
+  const hasRealVideo = Boolean(videoUrl)
 
   const fetchVideoUrl = async (videoId) => {
+    if (!videoId || isLoading) return
     setIsLoading(true)
     setFetchError(null)
-    setVideoLoadError(false)
+
     try {
-      console.log('[VideoPlayer] Fetching video status for:', videoId)
       const res = await fetch(`/api/heygen/video-status/${videoId}`)
       const data = await res.json()
-      console.log('[VideoPlayer] Status response:', data?.data?.status)
+      const status = data?.data?.status
+      const resolvedUrl = data?.data?.video_url
 
-      if (data?.data?.status === 'completed' && data?.data?.video_url) {
-        const url = data.data.video_url
-        console.log('[VideoPlayer] Video URL resolved:', url.slice(0, 80) + '...')
-        setVideoUrl(url)
-        setHasRealVideo(true)
-
-        // Persist the URL back to the plan so it doesn't need re-fetching
-        if (onVideoUrlResolved) {
-          onVideoUrlResolved(day.day, url)
+      if (status === 'completed' && resolvedUrl) {
+        setVideoUrl(resolvedUrl)
+        setFetchError(null)
+        setVideoLoadError(false)
+        if (onVideoUrlResolved && day?.day) {
+          onVideoUrlResolved(day.day, resolvedUrl)
         }
-      } else if (data?.data?.status === 'processing' || data?.data?.status === 'pending') {
-        setFetchError('still_processing')
-        // Auto-retry after 15 seconds
-        if (retryCountRef.current < 20) {
-          retryCountRef.current++
-          setTimeout(() => fetchVideoUrl(videoId), 15000)
-        }
-      } else if (data?.data?.status === 'failed') {
+      } else if (status === 'failed') {
         setFetchError('generation_failed')
+      } else if (status === 'processing' || status === 'pending' || status === 'queued') {
+        setFetchError('still_processing')
       } else {
-        setFetchError('unknown')
+        setFetchError('still_processing')
       }
     } catch (e) {
-      console.error('[VideoPlayer] Failed to fetch video URL:', e)
+      console.warn('[VideoPlayer] Failed to fetch video URL:', e)
       setFetchError('network')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Simulated playback for when no real video exists
+  // Reset state when switching to a different day
+  useEffect(() => {
+    setVideoUrl(day?.videoUrl || null)
+    setIsLoading(false)
+    setFetchError(null)
+    setVideoLoadError(false)
+    setIsPlaying(false)
+    setProgress(0)
+    setCurrentTime(0)
+    setDuration(0)
+  }, [day])
+
+  // Auto-fetch video URL when available but missing
+  useEffect(() => {
+    if (day?.videoId && !videoUrl) {
+      fetchVideoUrl(day.videoId)
+    }
+  }, [day?.videoId, videoUrl])
+
+  // Poll if still processing
+  useEffect(() => {
+    if (!day?.videoId || videoUrl || fetchError !== 'still_processing') return
+    const timer = setInterval(() => {
+      fetchVideoUrl(day.videoId)
+    }, 15000)
+    return () => clearInterval(timer)
+  }, [day?.videoId, videoUrl, fetchError])
+
   useEffect(() => {
     if (hasRealVideo || !isPlaying) return
     const interval = setInterval(() => {
@@ -134,21 +170,52 @@ export default function VideoPlayer({ day, onClose, onComplete, onNavigateToAvat
     return `${m}:${s.toString().padStart(2, '0')}`
   }
 
+  useEffect(() => {
+    let active = true
+    setEvidenceStatus('loading')
+    setEvidenceError(null)
+
+    searchClinicalData({
+      patientName,
+      diagnosis: patientDiagnosis,
+      episodeTitle: day?.episodeTitle,
+      dayTitle: day?.title,
+      dayDescription: day?.description,
+      instruction: 'Tailor the script to the patient.',
+    })
+      .then((result) => {
+        if (!active) return
+        if (result.ok) {
+          setEvidence(result.data)
+          setEvidenceStatus('ready')
+        } else {
+          setEvidenceStatus('error')
+          setEvidenceError(result.error || 'unknown_error')
+        }
+      })
+      .catch(() => {
+        if (!active) return
+        setEvidenceStatus('error')
+        setEvidenceError('request_failed')
+      })
+
+    return () => {
+      active = false
+    }
+  }, [day, patientName, patientDiagnosis])
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 video-overlay flex items-center justify-center p-6">
-      <div className="w-full max-w-4xl animate-slideUp">
-        {/* Close button */}
-        <div className="flex justify-end mb-3">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-slideUp">
+        {/* Video Area */}
+        <div className="bg-medflix-dark rounded-2xl overflow-hidden shadow-2xl relative">
           <button
             onClick={onClose}
-            className="text-white/60 hover:text-white p-1 transition-colors"
+            className="absolute top-4 right-4 text-white/70 hover:text-white p-1 transition-colors z-10"
+            aria-label="Close video"
           >
             <X className="w-6 h-6" />
           </button>
-        </div>
-
-        {/* Video Area */}
-        <div className="bg-medflix-dark rounded-2xl overflow-hidden shadow-2xl">
           {/* Video Content */}
           <div className="relative aspect-video bg-gradient-to-br from-medflix-dark to-gray-900 flex items-center justify-center">
             {/* Real video element */}
@@ -374,23 +441,39 @@ export default function VideoPlayer({ day, onClose, onComplete, onNavigateToAvat
                     : `${formatTimeDuration(progress * 3)} / 5:00`}
                 </span>
               </div>
-              {/* Open in new tab for real videos */}
-              {hasRealVideo && videoUrl && (
-                <a
-                  href={videoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white/60 hover:text-white transition-colors text-xs"
-                  title="Open in new tab"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </a>
-              )}
-              {!hasRealVideo && (
-                <button className="text-white/60 hover:text-white transition-colors">
-                  <Maximize2 className="w-4 h-4" />
-                </button>
-              )}
+              <button className="text-white/60 hover:text-white transition-colors">
+                <Maximize2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Clinical Data Highlights */}
+          <div className="px-5 py-4 bg-medflix-darker border-t border-white/10">
+            <div className="grid gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+                  Clinical Data Highlights
+                </p>
+                {evidenceStatus === 'loading' && (
+                  <p className="text-sm text-gray-400">Searching clinical data sources...</p>
+                )}
+                {evidenceStatus === 'error' && (
+                  <p className="text-sm text-amber-300">
+                    Unable to fetch evidence right now ({evidenceError}).
+                  </p>
+                )}
+                {evidenceStatus === 'ready' ? (
+                  <>
+                    <p className="text-sm text-gray-300 leading-relaxed">
+                      {evidence?.summary || 'No evidence summary returned.'}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    Evidence summary will appear here once available.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>

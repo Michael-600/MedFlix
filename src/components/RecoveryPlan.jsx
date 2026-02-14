@@ -2,7 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import DayCard from './DayCard'
 import VideoPlayer from './VideoPlayer'
 
-export default function RecoveryPlan({ plan, onUpdate, onNavigateToAvatar }) {
+export default function RecoveryPlan({
+  plan,
+  patientName,
+  patientDiagnosis,
+  onUpdate,
+  onNavigateToAvatar,
+}) {
   const [showVideo, setShowVideo] = useState(null)
   const refreshedRef = useRef(false)
 
@@ -133,6 +139,8 @@ export default function RecoveryPlan({ plan, onUpdate, onNavigateToAvatar }) {
       {showVideo !== null && (
         <VideoPlayer
           day={plan.days[showVideo]}
+          patientName={patientName}
+          patientDiagnosis={patientDiagnosis || plan?.diagnosis}
           onClose={() => setShowVideo(null)}
           onComplete={() => {
             handleCompleteDay(showVideo)
