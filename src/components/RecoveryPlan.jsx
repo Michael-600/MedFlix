@@ -2,7 +2,7 @@ import { useState } from 'react'
 import DayCard from './DayCard'
 import VideoPlayer from './VideoPlayer'
 
-export default function RecoveryPlan({ plan, onUpdate }) {
+export default function RecoveryPlan({ plan, onUpdate, onNavigateToAvatar }) {
   const [showVideo, setShowVideo] = useState(null)
 
   const completedCount = plan.days.filter(d => d.completed).length
@@ -86,6 +86,7 @@ export default function RecoveryPlan({ plan, onUpdate }) {
             handleCompleteDay(showVideo)
             setShowVideo(null)
           }}
+          onNavigateToAvatar={onNavigateToAvatar}
         />
       )}
     </div>

@@ -4,8 +4,9 @@ import { storage } from '../utils/storage'
 import Header from '../components/Header'
 import RecoveryPlan from '../components/RecoveryPlan'
 import AIAssistant from '../components/AIAssistant'
+import LiveAvatar from '../components/LiveAvatar'
 import CreateContent from '../components/CreateContent'
-import { CalendarDays, MessageCircle, Plus, Film } from 'lucide-react'
+import { CalendarDays, MessageCircle, Plus, Film, Video } from 'lucide-react'
 
 export default function PatientPortal() {
   const { user } = useAuth()
@@ -42,6 +43,7 @@ export default function PatientPortal() {
 
   const tabs = [
     { id: 'recovery', label: 'Recovery Plan', icon: CalendarDays },
+    { id: 'avatar', label: 'Live Avatar', icon: Video },
     { id: 'assistant', label: 'AI Assistant', icon: MessageCircle },
   ]
 
@@ -76,11 +78,14 @@ export default function PatientPortal() {
         {activeTab === 'recovery' && (
           <>
             {hasCreatedContent && plan ? (
-              <RecoveryPlan plan={plan} onUpdate={updatePlan} />
+              <RecoveryPlan plan={plan} onUpdate={updatePlan} onNavigateToAvatar={() => setActiveTab('avatar')} />
             ) : (
               <EmptyState onCreateClick={() => setShowCreateModal(true)} />
             )}
           </>
+        )}
+        {activeTab === 'avatar' && (
+          <LiveAvatar patientName={user?.name} diagnosis={plan?.diagnosis} />
         )}
         {activeTab === 'assistant' && (
           <AIAssistant patientName={user?.name} diagnosis={plan?.diagnosis} />
