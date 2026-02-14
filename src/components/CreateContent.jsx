@@ -266,7 +266,7 @@ export default function CreateContent({ onComplete }) {
     const newPlan = {
       ...defaultRecoveryPlan,
       patientName: 'Patient',
-      diagnosis: 'Custom Patient Education',
+      diagnosis: defaultRecoveryPlan.diagnosis,
       startDate: new Date().toISOString().split('T')[0],
       totalDays: videos.length,
       days: videos.map((video, idx) => ({
