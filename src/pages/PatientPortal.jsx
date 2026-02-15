@@ -86,6 +86,7 @@ export default function PatientPortal() {
                 patientDiagnosis={plan?.diagnosis || user?.diagnosis}
                 onUpdate={updatePlan}
                 onNavigateToAvatar={() => setActiveTab('avatar')}
+                userId={user?.id}
               />
             ) : (
               <EmptyState onCreateClick={() => setShowCreateModal(true)} />

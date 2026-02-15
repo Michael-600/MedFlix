@@ -2,14 +2,14 @@
 
 ## Overview
 
-MedFlix generates personalized, episodic recovery content for patients. Patients get a 7-day recovery timeline with AI-generated videos, a real-time streaming AI avatar for Q&A, a mock AI chatbot, and AI-powered medication reminders via SMS.
+MedFlix generates personalized, episodic recovery content for patients. Patients get a 7-day recovery timeline with AI-generated videos, a real-time streaming AI avatar for Q&A, a mock AI chatbot, and AI-powered medication reminders via Poke.
 
 ## Tech Stack
 
 **Frontend:** React 18.3.1, React Router 6.28.0, Vite 6.0.3, Tailwind CSS 3.4.16, Lucide React, livekit-client
-**Backend:** Express 4.21.2 (API proxy for HeyGen, LiveAvatar, Twilio, and context APIs)
+**Backend:** Express 4.21.2 (API proxy for HeyGen, LiveAvatar, Poke, and context APIs)
 **State:** React Context API + localStorage (no Redux, no database)
-**External APIs:** HeyGen (video generation), LiveAvatar (real-time streaming avatar), ClinicalTrials.gov (clinical evidence), Perplexity Sonar (web-search AI research), Twilio (SMS delivery), Poke (MCP agent for patient Q&A)
+**External APIs:** HeyGen (video generation), LiveAvatar (real-time streaming avatar), ClinicalTrials.gov (clinical evidence), Perplexity Sonar (web-search AI research), Poke (AI agent for medication reminders & patient Q&A via iMessage/Telegram/SMS)
 
 ## Project Structure
 
@@ -74,32 +74,27 @@ Vite proxies `/api/*` requests to the backend: `vite.config.js:9-13`
 HEYGEN_API_KEY=               # HeyGen video generation API
 LIVEAVATAR_API_KEY=           # LiveAvatar real-time streaming API
 PERPLEXITY_API_KEY=           # Perplexity Sonar web-search AI (also accepts PPLX_API_KEY)
-POKE_API_KEY=                 # Poke SDK for MCP agent (optional, for patient Q&A via messaging)
-TWILIO_ACCOUNT_SID=           # Twilio SMS delivery
-TWILIO_AUTH_TOKEN=            # Twilio SMS delivery
-TWILIO_PHONE_NUMBER=          # Twilio phone number in E.164 format (e.g. +14472841792)
+POKE_API_KEY=                 # Poke SDK — required for medication reminders & patient messaging
 PORT=3001
 ```
 
 **Notes:**
-- Twilio trial accounts prepend "Sent from your Twilio trial account" to every SMS and can only send to the account owner's verified number.
-- Twilio US numbers require A2P 10DLC registration to send to other numbers. For hackathon demos, send to your own number.
 - Poke API key from: `npx poke login` or https://poke.com/kitchen/api-keys
+- Poke delivers messages via the user's connected channel (iMessage, Telegram, or SMS)
+- MCP tools must be connected via `npx poke tunnel http://localhost:3001/mcp --name "MedFlix"` for Poke agent to access patient context
 
 ## Key Architecture Decisions
 
 **Backend proxy pattern:** Frontend never touches API keys. All external API calls go through `server/index.js` which adds auth headers.
 
-**Medication reminder pipeline (most complex new feature):**
-1. Patient registers phone → Twilio sends welcome SMS
+**Medication reminder pipeline (Poke as intelligent assistant):**
+1. Patient clicks "Connect to Poke" → `pokeSetupReminders()` sends the patient's full medication schedule via `poke.sendMessage()`, asking Poke to set up native daily reminders
 2. Medications auto-populate from `defaultMedications[diagnosis]` in `mockData.js`
-3. On reminder (60s interval) or "Send Test Reminder":
-   - `getPatientContext()` fetches ClinicalTrials.gov evidence + Perplexity Sonar research (cached 30min)
-   - `craftReminder()` asks Perplexity Sonar to write a personalized SMS using the medical context
-   - `sendSms()` delivers via Twilio
-4. Falls back to a template message if Perplexity is unavailable
+3. When medications change in the UI → backend re-calls `pokeSetupReminders()` to sync Poke's reminders
+4. "Send Test Reminder" → `pokeNudge()` asks Poke to send an immediate personalized reminder using MCP tools
+5. Poke handles scheduling natively — no backend polling loop. When reminders fire or patients text, Poke uses MCP tools autonomously for context.
 
-**Poke MCP server (`pokeMcp.js`):** Standalone MCP server that Poke's AI agent can call when patients text it. Exposes 6 tools: `get_patient_context`, `get_medication_schedule`, `search_clinical_evidence`, `research_medical_topic`, `log_medication_taken`, `send_reminder`. All tools make HTTP requests to the running Express server.
+**Poke MCP server (inline in `index.js`):** Streamable HTTP MCP server that Poke's AI agent calls autonomously. Exposes tools: `get_patient_context`, `get_medication_schedule`, `get_recovery_plan`, `search_clinical_evidence`, `research_medical_topic`, `log_medication_taken`, `send_reminder`, `lookup_patient`. Connected via `npx poke tunnel http://localhost:3001/mcp --name "MedFlix"`.
 
 **Clinical + Perplexity context endpoints:** Shared by both the reminder system and the MCP server:
 - `POST /api/clinical/search` — searches ClinicalTrials.gov (server-side port of `clinicalDataTool.js`)
@@ -132,14 +127,14 @@ PORT=3001
 - `POST /api/clinical/search` — Search ClinicalTrials.gov for clinical evidence
 - `POST /api/perplexity/research` — Run Perplexity Sonar research query (cached 10min)
 
-**Medication Reminders - Poke + Twilio:**
-- `POST /api/poke/register` — Register patient for SMS reminders (sends welcome message)
+**Medication Reminders - Poke:**
+- `POST /api/poke/register` — Register patient for reminders (sends welcome via Poke)
 - `POST /api/poke/medications` — Set/update medication schedule
-- `POST /api/poke/send-reminder` — Manually trigger a reminder (crafted by Perplexity, sent by Twilio)
+- `POST /api/poke/send-reminder` — Manually trigger a reminder (sent via Poke)
 - `GET /api/poke/status/:patientId` — Get registration & medication status
 - `DELETE /api/poke/unregister/:patientId` — Remove patient from reminders
 
-**Health:** `GET /api/health` — Check API key presence (heygen, liveavatar, perplexity, poke, twilio)
+**Health:** `GET /api/health` — Check API key presence (heygen, liveavatar, perplexity, poke)
 
 ## Data Structures
 
@@ -147,8 +142,8 @@ PORT=3001
 **Recovery Plan:** `{ patientName, diagnosis, startDate, totalDays, days[] }` — stored as `medflix_plan_${userId}`
 **Day:** `{ day, title, description, completed, unlocked, checklist[], videoUrl, videoId, episodeTitle }`
 **Medications:** `[{ id, name, dosage, frequency, times[], instructions, active }]` — stored as `medflix_medications_${userId}`
-**Poke Registration:** `{ registered, patientId, phoneNumber }` — stored as `medflix_poke_registered_${userId}`
-**Backend medicationStore (in-memory Map):** `patientId → { name, phoneNumber, diagnosis, patientId, userId, medications[] }`
+**Poke Registration:** `{ registered, patientId }` — stored as `medflix_poke_registered_${userId}`
+**Backend medicationStore (in-memory Map):** `patientId → { name, diagnosis, patientId, userId, medications[] }`
 
 ## Default Medications (mockData.js)
 
