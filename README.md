@@ -363,7 +363,7 @@ MedFlix/
 
 ## Team
 
-Built for [Hackathon Name] by the MedFlix Prime Care team.
+Built for TreeHacks 2026 by the MedFlix team.
 
 ---
 
