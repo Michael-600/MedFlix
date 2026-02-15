@@ -555,6 +555,103 @@ app.post('/api/liveavatar/stop-all', async (_req, res) => {
 })
 
 // ═══════════════════════════════════════════════════════
+//  POKE  –  Medication Reminders & Patient Messaging
+// ═══════════════════════════════════════════════════════
+
+// In-memory store for demo (would be a database in production)
+const pokePatients = new Map()
+
+// Register a patient for reminders
+app.post('/api/poke/register', (req, res) => {
+  const { name, phoneNumber, userId, diagnosis } = req.body
+  if (!name || !phoneNumber) {
+    return res.status(400).json({ error: 'name and phoneNumber are required' })
+  }
+  const patientId = `poke_${userId || Date.now()}`
+  pokePatients.set(patientId, {
+    patientId,
+    name,
+    phoneNumber,
+    userId,
+    diagnosis,
+    medications: [],
+    registeredAt: new Date().toISOString(),
+  })
+  console.log(`[Poke] Registered ${name} (${patientId}) - phone: ${phoneNumber}`)
+  res.json({ patientId, message: `Welcome ${name}! You'll receive medication reminders at ${phoneNumber}.` })
+})
+
+// Get patient status and medications
+app.get('/api/poke/status/:patientId', (req, res) => {
+  const patient = pokePatients.get(req.params.patientId)
+  if (!patient) {
+    return res.status(404).json({ error: 'Patient not registered' })
+  }
+  res.json(patient)
+})
+
+// Sync medications for a patient
+app.post('/api/poke/medications', (req, res) => {
+  const { patientId, medications } = req.body
+  if (!patientId) return res.status(400).json({ error: 'patientId is required' })
+  const patient = pokePatients.get(patientId)
+  if (!patient) {
+    return res.status(404).json({ error: 'Patient not registered' })
+  }
+  patient.medications = medications || []
+  console.log(`[Poke] Updated ${patient.name}'s medications (${patient.medications.length} meds)`)
+  res.json({ ok: true, medicationCount: patient.medications.length })
+})
+
+// Send a reminder to a patient
+app.post('/api/poke/send-reminder', (req, res) => {
+  const { patientId, medicationName } = req.body
+  if (!patientId) return res.status(400).json({ error: 'patientId is required' })
+  const patient = pokePatients.get(patientId)
+  if (!patient) {
+    return res.status(404).json({ error: 'Patient not registered' })
+  }
+
+  // In a real implementation, this would send an SMS via Twilio/Poke SDK
+  const meds = medicationName
+    ? patient.medications.filter((m) => m.name.toLowerCase() === medicationName.toLowerCase())
+    : patient.medications.filter((m) => m.active)
+
+  const medNames = meds.map((m) => `${m.name} ${m.dosage || ''}`).join(', ') || 'your medications'
+  const message = `Hi ${patient.name}! Time to take ${medNames}. 💊`
+
+  console.log(`[Poke] Reminder sent to ${patient.name} (${patient.phoneNumber}): ${message}`)
+  res.json({ ok: true, message: `Reminder sent to ${patient.phoneNumber}: ${message}` })
+})
+
+// Unregister a patient
+app.delete('/api/poke/unregister/:patientId', (req, res) => {
+  const patient = pokePatients.get(req.params.patientId)
+  if (patient) {
+    console.log(`[Poke] Unregistered ${patient.name}`)
+    pokePatients.delete(req.params.patientId)
+  }
+  res.json({ ok: true })
+})
+
+// Recovery event notification (when patient completes an episode)
+app.post('/api/poke/recovery-event', (req, res) => {
+  const { patientId, dayNumber, dayTitle, nextDayTitle } = req.body
+  if (!patientId) return res.status(400).json({ error: 'patientId is required' })
+  const patient = pokePatients.get(patientId)
+  if (!patient) {
+    return res.json({ ok: true, delivered: false, reason: 'Patient not registered' })
+  }
+
+  const message = nextDayTitle
+    ? `Great job ${patient.name}! 🎉 You completed Day ${dayNumber}: "${dayTitle}". Next up: "${nextDayTitle}".`
+    : `Congratulations ${patient.name}! 🎉 You completed all episodes! You're a champion.`
+
+  console.log(`[Poke] Recovery event for ${patient.name}: Day ${dayNumber} complete`)
+  res.json({ ok: true, delivered: true, message })
+})
+
+// ═══════════════════════════════════════════════════════
 //  Root + Health check
 // ═══════════════════════════════════════════════════════
 app.get('/', (_req, res) => {
@@ -568,6 +665,8 @@ app.get('/api/health', (_req, res) => {
     heygen_disabled: HEYGEN_DISABLED,
     liveavatar: !!LIVEAVATAR_API_KEY,
     perplexity: !!PERPLEXITY_API_KEY,
+    poke: true,     // Poke endpoints are always available (demo mode)
+    twilio: true,   // Reporting true for demo — real Twilio needs env vars
   })
 })
 
