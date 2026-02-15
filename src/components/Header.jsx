@@ -1,7 +1,8 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
 import { storage } from '../utils/storage'
-import { Heart, Home, LogOut, Stethoscope, User, RotateCcw } from 'lucide-react'
+import { Home, LogOut, RotateCcw } from 'lucide-react'
+import Logo from './Logo'
 
 export default function Header() {
   const { user, logout } = useAuth()
@@ -11,72 +12,59 @@ export default function Header() {
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    navigate('/')
   }
 
   return (
-    <header className="bg-medflix-dark text-white">
-      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-medflix-accent rounded-lg flex items-center justify-center">
-            <Heart className="w-4.5 h-4.5 text-white" fill="white" size={18} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-semibold leading-tight">
-                {isDoctor ? 'Doctor Portal' : 'Patient Portal'}
-              </h1>
-              <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full ${
-                isDoctor ? 'bg-blue-500/20 text-blue-300' : 'bg-medflix-accent/20 text-medflix-accent'
-              }`}>
-                {isDoctor ? 'Doctor' : 'Patient'}
-              </span>
-            </div>
-            <p className="text-xs text-gray-400">
-              {isDoctor ? (
-                <>
-                  <Stethoscope className="w-3 h-3 inline mr-1" />
-                  {user?.name || 'Doctor'}
-                </>
-              ) : (
-                <>
-                  <User className="w-3 h-3 inline mr-1" />
-                  {user?.name || 'Patient'}
-                </>
-              )}
-            </p>
+    <header className="bg-white border-b-5 border-gray-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link to="/" className="hover:opacity-80 transition-opacity">
+            <Logo size="md" showText={true} />
+          </Link>
+          <div className="h-8 w-px bg-gray-300"></div>
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1 text-xs font-bold rounded-full shadow-sm border-2 ${
+              isDoctor 
+                ? 'bg-blue-600 text-gray-900 border-blue-800' 
+                : 'bg-yellow-400 text-gray-900 border-yellow-600'
+            }`}>
+              {isDoctor ? 'DOCTOR' : 'PATIENT'}
+            </span>
+            <span className="text-sm font-bold text-gray-900">
+              {user?.name || (isDoctor ? 'Doctor' : 'Patient')}
+            </span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Reset demo data */}
+          <Link
+            to={isDoctor ? '/doctor' : '/portal'}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all border-2 border-gray-300 hover:border-gray-400 shadow-sm"
+          >
+            <Home className="w-3.5 h-3.5" />
+            Home
+          </Link>
           <button
             onClick={() => {
-              if (confirm('Clear all generated content and start fresh?')) {
+              if (confirm('Clear all your progress and start fresh?')) {
                 storage.clear()
                 fetch('/api/context/clear-cache', { method: 'POST' }).catch(() => {})
                 window.location.reload()
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-400 hover:text-white hover:bg-red-500/20 rounded-lg transition-colors border border-red-400/30"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-900 bg-medflix-yellow hover:bg-medflix-yellow-dark rounded-lg transition-all shadow-sm border-2 border-medflix-yellow-dark"
             title="Clear all demo data and start fresh"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
             Reset
           </button>
-
-          <Link
-            to={isDoctor ? '/doctor' : '/portal'}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <Home className="w-4 h-4" />
-            Home
-          </Link>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-white/20 rounded-lg hover:bg-white/10 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-900 bg-medflix-red hover:bg-medflix-red-dark rounded-lg transition-all shadow-sm border-2 border-red-700"
+            title="Log out"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
             Logout
           </button>
         </div>

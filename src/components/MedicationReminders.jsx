@@ -275,10 +275,10 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
               <button
                 onClick={handleRegister}
                 disabled={!phoneNumber.trim() || isRegistering}
-                className="px-6 py-3 bg-medflix-accent text-white rounded-xl text-sm font-medium hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-3 bg-medflix-accent text-gray-900 rounded-xl text-sm font-bold hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 border-2 border-purple-700"
               >
                 {isRegistering ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-gray-700 border-t-gray-900 rounded-full animate-spin" />
                 ) : (
                   <Wifi className="w-4 h-4" />
                 )}
@@ -304,7 +304,7 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
             </div>
             <button
               onClick={() => { resetForm(); setShowAddForm(true) }}
-              className="px-4 py-2 bg-medflix-accent text-white rounded-lg text-sm font-medium hover:bg-medflix-accentLight transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 bg-medflix-accent text-gray-900 rounded-lg text-sm font-bold hover:bg-medflix-accentLight transition-colors flex items-center gap-1.5 border-2 border-purple-700"
             >
               <Plus className="w-4 h-4" />
               Add
@@ -442,14 +442,14 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
               <div className="flex justify-end gap-2 mt-4">
                 <button
                   onClick={resetForm}
-                  className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="px-4 py-2 text-sm font-bold text-gray-900 bg-gray-100 border-2 border-gray-300 rounded-lg hover:bg-gray-200 hover:border-gray-400 transition-all shadow-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddMedication}
                   disabled={!formData.name.trim() || !formData.dosage.trim()}
-                  className="px-4 py-2 bg-medflix-accent text-white rounded-lg text-sm font-medium hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  className="px-4 py-2 bg-medflix-accent text-gray-900 rounded-lg text-sm font-bold hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 border-2 border-purple-700"
                 >
                   <Check className="w-4 h-4" />
                   {editingId ? 'Save Changes' : 'Add Medication'}
@@ -477,10 +477,10 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
           <button
             onClick={handleSendTest}
             disabled={!registered || isSendingTest}
-            className="px-5 py-2.5 bg-medflix-accent text-white rounded-lg text-sm font-medium hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-5 py-2.5 bg-medflix-accent text-gray-900 rounded-lg text-sm font-bold hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 border-2 border-purple-700"
           >
             {isSendingTest ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-gray-700 border-t-gray-900 rounded-full animate-spin" />
             ) : (
               <Send className="w-4 h-4" />
             )}

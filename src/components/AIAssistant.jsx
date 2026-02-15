@@ -85,18 +85,18 @@ export default function AIAssistant({ patientName, diagnosis }) {
   ]
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 240px)' }}>
+    <div className="max-w-6xl mx-auto">
+      <div className="bg-white rounded-3xl border-5 border-gray-200 shadow-2xl overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 240px)' }}>
         {/* Chat Header */}
-        <div className="px-6 py-4 border-b bg-gradient-to-r from-medflix-accent/5 to-transparent">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-medflix-accent/10 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-medflix-accent" />
+        <div className="px-6 py-5 border-b-4 border-purple-200 bg-purple-50">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-medflix-purple rounded-2xl flex items-center justify-center shadow-lg border-3 border-purple-700">
+              <Sparkles className="w-8 h-8 text-gray-900" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">MedFlix AI Assistant</h3>
-              <p className="text-xs text-gray-500">
-                Ask questions about your {diagnosis || 'recovery'} plan
+              <h3 className="font-black text-gray-900 text-2xl">Ask Me!</h3>
+              <p className="text-base text-gray-700 font-bold">
+                I know lots about {diagnosis || 'health'}!
               </p>
             </div>
           </div>
@@ -110,15 +110,15 @@ export default function AIAssistant({ patientName, diagnosis }) {
               className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''} animate-fadeIn`}
             >
               {msg.role === 'assistant' && (
-                <div className="w-8 h-8 bg-medflix-accent/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Bot className="w-4 h-4 text-medflix-accent" />
+                <div className="w-12 h-12 bg-medflix-purple rounded-2xl flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md border-2 border-purple-700">
+                  <Bot className="w-6 h-6 text-gray-900" />
                 </div>
               )}
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                className={`max-w-[75%] rounded-3xl px-6 py-4 text-base leading-relaxed font-semibold shadow-lg ${
                   msg.role === 'user'
-                    ? 'bg-medflix-dark text-white rounded-br-md'
-                    : 'bg-gray-100 text-gray-800 rounded-bl-md'
+                    ? 'bg-medflix-blue text-gray-900 border-4 border-medflix-blue-dark'
+                    : 'bg-purple-50 text-gray-900 border-4 border-medflix-purple'
                 }`}
               >
                 {msg.content.split('\n').map((line, j) => (
@@ -132,8 +132,8 @@ export default function AIAssistant({ patientName, diagnosis }) {
                 ))}
               </div>
               {msg.role === 'user' && (
-                <div className="w-8 h-8 bg-medflix-dark rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <User className="w-4 h-4 text-white" />
+                <div className="w-12 h-12 bg-medflix-blue rounded-2xl flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md border-2 border-blue-700">
+                  <User className="w-6 h-6 text-gray-900" />
                 </div>
               )}
             </div>
@@ -142,14 +142,14 @@ export default function AIAssistant({ patientName, diagnosis }) {
           {/* Typing indicator */}
           {isTyping && (
             <div className="flex gap-3 animate-fadeIn">
-              <div className="w-8 h-8 bg-medflix-accent/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4 text-medflix-accent" />
+              <div className="w-12 h-12 bg-medflix-purple rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md border-2 border-purple-700">
+                <Bot className="w-6 h-6 text-gray-900" />
               </div>
-              <div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3">
-                <div className="flex gap-1.5">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot" />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot" />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot" />
+              <div className="bg-purple-50 rounded-3xl px-6 py-4 border-4 border-medflix-purple shadow-lg">
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 bg-medflix-purple rounded-full typing-dot" />
+                  <div className="w-3 h-3 bg-medflix-purple rounded-full typing-dot" />
+                  <div className="w-3 h-3 bg-medflix-purple rounded-full typing-dot" />
                 </div>
               </div>
             </div>
@@ -169,7 +169,7 @@ export default function AIAssistant({ patientName, diagnosis }) {
                     setInput(action)
                     setTimeout(() => inputRef.current?.focus(), 0)
                   }}
-                  className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full text-xs text-gray-600 hover:bg-medflix-accent/5 hover:border-medflix-accent/30 hover:text-medflix-accent transition-colors"
+                  className="px-4 py-2.5 bg-white border-3 border-gray-300 rounded-xl text-sm text-gray-900 font-bold hover:bg-purple-50 hover:border-medflix-purple hover:scale-105 transition-all shadow-md"
                 >
                   {action}
                 </button>
@@ -179,28 +179,28 @@ export default function AIAssistant({ patientName, diagnosis }) {
         )}
 
         {/* Input */}
-        <div className="p-4 border-t bg-gray-50">
-          <div className="flex gap-2">
+        <div className="p-5 border-t-4 border-purple-200 bg-purple-50">
+          <div className="flex gap-3">
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about your recovery plan..."
-              className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
+              placeholder="Type your question..."
+              className="flex-1 px-5 py-4 bg-white border-4 border-gray-300 rounded-2xl text-lg font-semibold focus:border-medflix-purple focus:ring-4 focus:ring-purple-100 outline-none transition-all"
               disabled={isTyping}
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || isTyping}
-              className="px-4 py-3 bg-medflix-dark text-white rounded-xl hover:bg-medflix-darker transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-6 py-4 bg-medflix-purple text-gray-900 rounded-2xl hover:bg-medflix-purple-dark transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg hover:scale-105 border-3 border-purple-700"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-6 h-6" />
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 mt-2 text-center">
-            AI responses are for educational purposes only. Always consult your healthcare provider for medical advice.
+          <p className="text-sm text-gray-700 mt-3 text-center font-bold">
+            Ask me anything! I love questions! 💭
           </p>
         </div>
       </div>

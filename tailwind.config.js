@@ -8,28 +8,57 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          200: '#bbf7d0',
-          300: '#86efac',
-          400: '#4ade80',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-          800: '#166534',
-          900: '#14532d',
+          50: '#faf5ff',
+          100: '#f3e8ff',
+          200: '#e9d5ff',
+          300: '#d8b4fe',
+          400: '#c084fc',
+          500: '#a855f7',
+          600: '#9333ea',
+          700: '#7e22ce',
+          800: '#6b21a8',
+          900: '#581c87',
         },
         medflix: {
           dark: '#1a1a2e',
           darker: '#16162a',
-          accent: '#00d4aa',
-          accentLight: '#00e6b8',
+          accent: '#9333ea',
+          accentLight: '#a855f7',
+          accentDark: '#7e22ce',
           card: '#ffffff',
-          bg: '#f5f5f5',
+          bg: '#f9fafb',
           muted: '#6b7280',
+          // Primary colors for kids
+          red: {
+            light: '#fef2f2',
+            DEFAULT: '#ef4444',
+            dark: '#dc2626',
+          },
+          blue: {
+            light: '#eff6ff',
+            DEFAULT: '#3b82f6',
+            dark: '#2563eb',
+          },
+          yellow: {
+            light: '#fefce8',
+            DEFAULT: '#eab308',
+            dark: '#ca8a04',
+          },
+          purple: {
+            light: '#faf5ff',
+            DEFAULT: '#9333ea',
+            dark: '#7e22ce',
+          },
         }
       }
     },
   },
   plugins: [],
+  safelist: [
+    // Ensure these utility classes are always available
+    'animate-blob',
+    'animate-shimmer',
+    'animate-glow',
+    'animate-scaleIn',
+  ],
 }

@@ -418,11 +418,11 @@ export default function LiveAvatar({ patient }) {
   //  RENDER
   // ─────────────────────────────────────────────────────
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="relative bg-black rounded-3xl overflow-hidden shadow-2xl" style={{ minHeight: '680px' }}>
+    <div className="w-full">
+      <div className="relative bg-gradient-to-br from-blue-50 via-purple-50 to-yellow-50 rounded-3xl overflow-hidden shadow-2xl border-5 border-gray-200" style={{ minHeight: '720px' }}>
 
         {/* ═══ ALWAYS IN DOM: Avatar video ═══ */}
-        <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-b from-gray-900 to-black transition-opacity duration-500 ${
+        <div className={`absolute inset-0 flex items-center justify-center bg-white transition-opacity duration-500 ${
           callState === STATE.CONNECTED ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}>
           <video ref={avatarVideoRef} autoPlay playsInline className="w-full h-full object-contain" />
@@ -442,57 +442,63 @@ export default function LiveAvatar({ patient }) {
 
         {/* ═══ IDLE / ERROR ═══ */}
         {(callState === STATE.IDLE || callState === STATE.ERROR) && (
-          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-medflix-darker to-gray-900">
-            <div className="absolute inset-0 opacity-5 pointer-events-none">
-              <div className="absolute top-20 left-20 w-64 h-64 bg-medflix-accent rounded-full blur-[100px]" />
-              <div className="absolute bottom-20 right-20 w-48 h-48 bg-blue-500 rounded-full blur-[80px]" />
-            </div>
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-yellow-50">
+            {/* Playful decorative shapes */}
+            <div className="absolute top-10 left-10 w-24 h-24 bg-medflix-red rounded-full opacity-15 animate-float-gentle"></div>
+            <div className="absolute top-32 right-20 w-32 h-32 bg-medflix-blue opacity-15" style={{clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'}}></div>
+            <div className="absolute bottom-20 left-20 w-28 h-28 bg-medflix-yellow rounded-lg rotate-45 opacity-15 animate-float-gentle animation-delay-1000"></div>
+            <div className="absolute bottom-32 right-32 w-20 h-20 bg-medflix-purple rounded-full opacity-15 animate-float-gentle animation-delay-2000"></div>
+            
             <div className="relative z-10 text-center px-8">
-              <div className="relative w-32 h-32 mx-auto mb-8">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-medflix-accent/30 to-medflix-accentLight/30 flex items-center justify-center border-4 border-medflix-accent/40 shadow-lg shadow-medflix-accent/20">
-                  <User className="w-16 h-16 text-medflix-accent" strokeWidth={1.5} />
+              <div className="relative w-40 h-40 mx-auto mb-8">
+                <div className="w-40 h-40 rounded-3xl bg-white border-5 border-medflix-purple flex items-center justify-center shadow-2xl">
+                  <User className="w-20 h-20 text-medflix-purple" strokeWidth={2.5} />
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-4 border-gray-900 flex items-center justify-center">
-                  <div className="w-3 h-3 bg-white rounded-full" />
+                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
+                  <div className="w-3 h-3 bg-gray-900 rounded-full" />
                 </div>
               </div>
-              <h2 className="text-3xl font-bold text-white mb-2">MedFlix Health Guide</h2>
-              <p className="text-gray-400 text-lg mb-1">Your Personal Care Education Assistant</p>
-              <p className="text-gray-500 text-sm mb-10">Available now to help you understand your care plan</p>
+              <h2 className="text-4xl font-black text-gray-900 mb-2">Video Chat!</h2>
+              <p className="text-xl text-gray-700 mb-2 font-bold">Talk with Your Health Guide</p>
+              <p className="text-base text-gray-700 mb-10 font-semibold">Ask questions and learn together!</p>
               {callState === STATE.ERROR && errorMsg && (
-                <div className="mb-8 px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-xl max-w-sm mx-auto">
+                <div className="mb-8 px-6 py-3 bg-red-100 border-3 border-red-400 rounded-2xl max-w-md mx-auto">
                   <div className="flex items-center gap-2 justify-center">
-                    <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                    <p className="text-red-400 text-sm">{errorMsg}</p>
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                    <p className="text-red-600 text-sm font-bold">{errorMsg}</p>
                   </div>
                 </div>
               )}
               <button onClick={startCall}
-                className="group inline-flex items-center gap-3 px-10 py-4 bg-green-500 text-white rounded-full font-semibold text-lg hover:bg-green-400 transition-all hover:scale-105 shadow-lg shadow-green-500/30">
-                <Phone className="w-6 h-6 group-hover:animate-pulse" />
-                Start Call
+                className="group inline-flex items-center gap-3 px-12 py-5 bg-medflix-purple text-gray-900 rounded-2xl font-black text-lg hover:bg-medflix-purple-dark transition-all shadow-2xl hover:scale-105 border-4 border-purple-700">
+                <Phone className="w-6 h-6" />
+                Start Video Chat!
               </button>
-              <p className="text-gray-600 text-xs mt-6">Voice call with AI &bull; Speak naturally &bull; Camera optional</p>
+              <p className="text-base text-gray-700 mt-6 font-bold">🎤 Voice enabled • 📹 Camera optional • 🗣️ Speak naturally</p>
             </div>
           </div>
         )}
 
         {/* ═══ CONNECTING ═══ */}
         {callState === STATE.CONNECTING && (
-          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-medflix-darker to-gray-900">
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-yellow-50">
+            {/* Animated shapes */}
+            <div className="absolute top-20 left-20 w-20 h-20 bg-medflix-red rounded-full opacity-20 animate-float-gentle"></div>
+            <div className="absolute bottom-20 right-20 w-24 h-24 bg-medflix-yellow rounded-full opacity-20 animate-float-gentle animation-delay-1000"></div>
+            
             <div className="text-center">
-              <div className="relative w-28 h-28 mx-auto mb-8">
-                <div className="absolute inset-0 rounded-full border-4 border-medflix-accent/20" />
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-medflix-accent animate-spin" />
-                <div className="absolute inset-4 rounded-full bg-gray-800 flex items-center justify-center">
-                  <Phone className="w-8 h-8 text-medflix-accent" />
+              <div className="relative w-32 h-32 mx-auto mb-8">
+                <div className="absolute inset-0 rounded-3xl border-5 border-medflix-purple opacity-30" />
+                <div className="absolute inset-0 rounded-3xl border-5 border-transparent border-t-medflix-purple animate-spin" />
+                <div className="absolute inset-4 rounded-2xl bg-white shadow-xl flex items-center justify-center border-3 border-gray-200">
+                  <Phone className="w-10 h-10 text-medflix-purple" />
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Connecting to Health Guide...</h3>
-              <p className="text-gray-400 text-sm animate-pulse">{connectingStep || 'Please wait...'}</p>
+              <h3 className="text-2xl font-black text-gray-900 mb-3">Connecting...</h3>
+              <p className="text-lg text-gray-700 animate-pulse font-bold">{connectingStep || 'Getting ready to chat!'}</p>
             </div>
             <button onClick={endCall}
-              className="absolute bottom-10 px-8 py-3 bg-red-500/20 text-red-400 rounded-full font-medium hover:bg-red-500/30 transition-colors">
+              className="absolute bottom-10 px-8 py-3 bg-red-100 text-red-600 rounded-2xl font-bold hover:bg-red-200 transition-colors border-3 border-red-400 shadow-lg">
               Cancel
             </button>
           </div>
@@ -502,38 +508,38 @@ export default function LiveAvatar({ patient }) {
         {callState === STATE.CONNECTED && (
           <>
             {/* Top bar */}
-            <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 via-black/30 to-transparent p-5">
+            <div className="absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-sm border-b-3 border-gray-200 p-5 shadow-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-white/90 text-sm font-medium">MedFlix Health Guide</span>
-                  <span className="text-white/40 text-sm">&bull;</span>
-                  <span className="text-white/60 text-sm font-mono">{formatDuration(callDuration)}</span>
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse border-2 border-green-700" />
+                  <span className="text-gray-900 text-base font-black">Health Guide</span>
+                  <span className="text-gray-500 text-base">•</span>
+                  <span className="text-gray-700 text-base font-bold font-mono">{formatDuration(callDuration)}</span>
                 </div>
                 {isAvatarSpeaking && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-medflix-accent/20 rounded-full">
-                    <div className="flex gap-0.5">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-xl border-2 border-medflix-purple">
+                    <div className="flex gap-1">
                       {[1, 2, 3].map((i) => (
-                        <div key={i} className="w-1 bg-medflix-accent rounded-full animate-pulse"
-                          style={{ height: `${8 + Math.random() * 8}px`, animationDelay: `${i * 0.1}s` }} />
+                        <div key={i} className="w-1.5 bg-medflix-purple rounded-full animate-pulse"
+                          style={{ height: `${10 + Math.random() * 8}px`, animationDelay: `${i * 0.1}s` }} />
                       ))}
                     </div>
-                    <span className="text-medflix-accent text-xs font-medium">Speaking</span>
+                    <span className="text-medflix-purple text-sm font-bold">Speaking</span>
                   </div>
                 )}
               </div>
             </div>
 
             {/* User camera PIP — canvas mirrors the offscreen video */}
-            <div className="absolute top-20 right-5 z-20">
-              <div className={`relative w-36 h-28 rounded-2xl overflow-hidden shadow-lg border-2 transition-colors ${
-                isUserSpeaking ? 'border-medflix-accent' : 'border-white/20'
+            <div className="absolute top-24 right-5 z-20">
+              <div className={`relative w-40 h-32 rounded-2xl overflow-hidden shadow-2xl border-4 transition-all ${
+                isUserSpeaking ? 'border-medflix-yellow scale-105' : 'border-gray-300'
               }`}>
                 {isCamOn ? (
                   <CameraMirror sourceRef={userVideoRef} />
                 ) : (
-                  <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                    <User className="w-8 h-8 text-gray-500" />
+                  <div className="w-full h-full bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
+                    <User className="w-10 h-10 text-medflix-purple" strokeWidth={2.5} />
                   </div>
                 )}
                 {isUserSpeaking && (
@@ -545,47 +551,47 @@ export default function LiveAvatar({ patient }) {
                   </div>
                 )}
                 {!isMicOn && (
-                  <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                    <MicOff className="w-3 h-3 text-white" />
+                  <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center border border-red-700">
+                    <MicOff className="w-3 h-3 text-gray-900" />
                   </div>
                 )}
-                <p className="absolute bottom-1.5 left-2 text-white/70 text-[10px] font-medium drop-shadow">You</p>
+                <p className="absolute bottom-1.5 left-2 text-gray-700 text-xs font-bold drop-shadow">You</p>
               </div>
             </div>
 
             {/* Live captions */}
             {caption && (
-              <div className="absolute bottom-28 left-0 right-0 z-20 flex justify-center px-8 pointer-events-none">
-                <div className={`max-w-2xl px-5 py-3 rounded-2xl backdrop-blur-md text-center animate-fadeIn ${
-                  captionRole === 'user' ? 'bg-medflix-accent/80 text-white' : 'bg-black/70 text-white'
+              <div className="absolute bottom-32 left-0 right-0 z-20 flex justify-center px-8 pointer-events-none">
+                <div className={`max-w-3xl px-6 py-4 rounded-2xl backdrop-blur-sm text-center animate-fadeIn border-4 shadow-2xl ${
+                  captionRole === 'user' ? 'bg-medflix-yellow/95 text-gray-900 border-yellow-600' : 'bg-white/95 text-gray-900 border-medflix-blue'
                 }`}>
                   {captionRole === 'user' && (
-                    <p className="text-[10px] text-white/60 font-medium mb-0.5 uppercase tracking-wider">You said</p>
+                    <p className="text-xs text-gray-700 font-bold mb-1 uppercase tracking-wider">You said</p>
                   )}
-                  <p className="text-sm leading-relaxed font-medium">{caption}</p>
+                  <p className="text-base leading-relaxed font-bold">{caption}</p>
                 </div>
               </div>
             )}
 
             {/* Bottom controls */}
-            <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-16 pb-6">
-              <div className="flex items-center justify-center gap-5">
+            <div className="absolute bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-sm border-t-4 border-gray-200 py-6 shadow-2xl">
+              <div className="flex items-center justify-center gap-6">
                 <button onClick={toggleMic}
-                  className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
-                    isMicOn ? 'bg-white/15 hover:bg-white/25 backdrop-blur-sm' : 'bg-red-500 hover:bg-red-600'
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all shadow-xl border-3 ${
+                    isMicOn ? 'bg-medflix-blue hover:bg-blue-600 border-blue-700' : 'bg-red-500 hover:bg-red-600 border-red-700'
                   }`} title={isMicOn ? 'Mute' : 'Unmute'}>
-                  {isMicOn ? <Mic className="w-6 h-6 text-white" /> : <MicOff className="w-6 h-6 text-white" />}
+                  {isMicOn ? <Mic className="w-7 h-7 text-gray-900" /> : <MicOff className="w-7 h-7 text-gray-900" />}
                 </button>
                 <button onClick={toggleCamera}
-                  className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
-                    isCamOn ? 'bg-white/15 hover:bg-white/25 backdrop-blur-sm' : 'bg-white/10 hover:bg-white/20'
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all shadow-xl border-3 ${
+                    isCamOn ? 'bg-medflix-yellow hover:bg-yellow-500 border-yellow-600' : 'bg-gray-300 hover:bg-gray-400 border-gray-500'
                   }`} title={isCamOn ? 'Camera off' : 'Camera on'}>
-                  {isCamOn ? <Video className="w-6 h-6 text-white" /> : <VideoOff className="w-6 h-6 text-gray-400" />}
+                  {isCamOn ? <Video className="w-7 h-7 text-gray-900" /> : <VideoOff className="w-7 h-7 text-gray-600" />}
                 </button>
                 <button onClick={endCall}
-                  className="w-16 h-14 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-all shadow-lg shadow-red-500/30"
+                  className="w-20 h-16 rounded-2xl bg-red-500 hover:bg-red-600 flex items-center justify-center transition-all shadow-2xl hover:scale-105 border-4 border-red-700"
                   title="End call">
-                  <PhoneOff className="w-6 h-6 text-white" />
+                  <PhoneOff className="w-7 h-7 text-gray-900" />
                 </button>
               </div>
             </div>

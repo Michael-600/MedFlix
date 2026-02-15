@@ -5,8 +5,15 @@ import { samplePatient, getPatientContext } from '../data/patientData'
 import {
   Palette, Users, Upload, Film, CheckCircle, PenLine,
   Plus, FileText, Image as ImageIcon, X, Trash2, Loader2, RefreshCw,
-  Database, Brain, Video,
+  Database, Brain, Video, Sparkles, Camera, Zap, Settings,
+  User, UserCircle, Focus, Circle,
 } from 'lucide-react'
+
+// Icon mapping for dynamic rendering
+const iconMap = {
+  Video, Sparkles, Palette, Camera, Film, Zap, FileText, Settings,
+  User, UserCircle, Focus, Circle,
+}
 
 const STEPS = [
   { id: 'setup', label: 'Setup', icon: Palette },
@@ -25,7 +32,9 @@ const AVATAR_PRESETS = [
     avatar_id: 'Angela-inTshirt-20220820',
     voice_id: '1bd001e7e50f421d891986aad5571571',
     avatar_style: 'normal',
-    preview: '👩‍⚕️',
+    icon: 'User',
+    image: null, // Add your licensed avatar image here
+    emoji: '👩‍⚕️',
   },
   {
     id: 'josh',
@@ -34,7 +43,9 @@ const AVATAR_PRESETS = [
     avatar_id: 'josh_lite3_20230714',
     voice_id: '077ab11b14f04ce0b49b5f0f3ccb1573',
     avatar_style: 'normal',
-    preview: '👨‍⚕️',
+    icon: 'UserCircle',
+    image: null,
+    emoji: '👨‍⚕️',
   },
   {
     id: 'anna',
@@ -43,7 +54,9 @@ const AVATAR_PRESETS = [
     avatar_id: 'Anna_public_3_20240108',
     voice_id: '2d5b0e6cf36f460aa7fc47e3eee4ba54',
     avatar_style: 'normal',
-    preview: '👩',
+    icon: 'User',
+    image: null,
+    emoji: '👩‍🏫',
   },
   {
     id: 'edward',
@@ -52,7 +65,9 @@ const AVATAR_PRESETS = [
     avatar_id: 'Tyler-incasualsuit-20220721',
     voice_id: '131a436c47064f708210df6628ef8f32',
     avatar_style: 'normal',
-    preview: '👨',
+    icon: 'UserCircle',
+    image: null,
+    emoji: '👨‍💼',
   },
   {
     id: 'closeup',
@@ -61,7 +76,9 @@ const AVATAR_PRESETS = [
     avatar_id: 'Angela-inTshirt-20220820',
     voice_id: '1bd001e7e50f421d891986aad5571571',
     avatar_style: 'closeUp',
-    preview: '🔍',
+    icon: 'Focus',
+    image: null,
+    emoji: '👤',
   },
   {
     id: 'circle',
@@ -70,7 +87,9 @@ const AVATAR_PRESETS = [
     avatar_id: 'Angela-inTshirt-20220820',
     voice_id: '1bd001e7e50f421d891986aad5571571',
     avatar_style: 'circle',
-    preview: '⭕',
+    icon: 'Circle',
+    image: null,
+    emoji: '⭕',
   },
 ]
 
@@ -521,56 +540,59 @@ export default function CreateContent({
     <div className="max-w-5xl mx-auto">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-1">Create Patient Education Content</h2>
-        <p className="text-sm text-gray-500">
+        <p className="text-base text-gray-700 font-medium">
           Transform medical documents into engaging video episodes
         </p>
       </div>
 
       {/* Step Indicator */}
-      <div className="flex items-center justify-center gap-4 mb-10">
-        {STEPS.map((step, i) => (
-          <div key={step.id} className="flex items-center">
-            <button
-              onClick={() => {
-                if (i < currentStep || (i === 1 && videos.length > 0)) {
-                  setCurrentStep(i)
-                }
-              }}
-              disabled={i > currentStep && !(i === 1 && videos.length > 0)}
-              className={`flex flex-col items-center gap-2 px-4 py-2 rounded-xl transition-all ${
-                i === currentStep
-                  ? 'text-medflix-accent'
-                  : i < currentStep
-                  ? 'text-green-600 cursor-pointer hover:bg-gray-50'
-                  : 'text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-medium ${
+      <div className="flex items-center justify-center gap-4 mb-12">
+        {STEPS.map((step, i) => {
+          const stepColors = ['bg-medflix-red', 'bg-medflix-blue', 'bg-medflix-yellow'];
+          return (
+            <div key={step.id} className="flex items-center">
+              <button
+                onClick={() => {
+                  if (i < currentStep || (i === 1 && videos.length > 0)) {
+                    setCurrentStep(i)
+                  }
+                }}
+                disabled={i > currentStep && !(i === 1 && videos.length > 0)}
+                className={`flex flex-col items-center gap-3 px-6 py-4 rounded-3xl transition-all border-4 ${
                   i === currentStep
-                    ? 'bg-medflix-accent/10 text-medflix-accent'
+                    ? 'border-gray-900 bg-white scale-110'
                     : i < currentStep
-                    ? 'bg-green-100 text-green-600'
-                    : 'bg-gray-100 text-gray-400'
+                    ? 'border-green-500 bg-green-50 cursor-pointer hover:scale-105'
+                    : 'border-gray-300 bg-gray-100 cursor-not-allowed opacity-50'
                 }`}
               >
-                {i < currentStep ? (
-                  <CheckCircle className="w-5 h-5" />
-                ) : (
-                  <step.icon className="w-5 h-5" />
-                )}
-              </div>
-              <span className="text-sm font-medium">{step.label}</span>
-            </button>
-            {i < STEPS.length - 1 && (
-              <div className={`w-16 h-0.5 ${i < currentStep ? 'bg-green-500' : 'bg-gray-200'}`} />
-            )}
-          </div>
-        ))}
+                <div
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-all border-3 ${
+                    i === currentStep
+                      ? `${stepColors[i]} text-gray-900 border-gray-800`
+                      : i < currentStep
+                      ? 'bg-green-500 text-gray-900 border-green-700'
+                      : 'bg-gray-300 text-gray-700 border-gray-500'
+                  }`}
+                >
+                  {i < currentStep ? (
+                    <CheckCircle className="w-8 h-8" />
+                  ) : (
+                    <step.icon className="w-8 h-8" />
+                  )}
+                </div>
+                <span className="text-base font-black">{step.label}</span>
+              </button>
+              {i < STEPS.length - 1 && (
+                <div className={`w-16 h-2 rounded-full transition-all ${i < currentStep ? 'bg-green-500' : 'bg-gray-200'}`} />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Step Content */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-8">
+      <div className="bg-white rounded-[2rem] border-5 border-gray-200 p-10 shadow-2xl">
         {currentStep === 0 && (
           <SetupStep
             patientName={patientName}
@@ -635,7 +657,7 @@ function SetupStep({
       {/* Patient */}
       <section>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Patient Context</h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-700 mb-4 font-medium">
           Patient data is used to query OpenFDA, DailyMed, and Perplexity Sonar for personalized clinical context
         </p>
 
@@ -666,26 +688,54 @@ function SetupStep({
       {/* Visual Style */}
       <section>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Choose Visual Style</h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-700 mb-4 font-medium">
           Select a visual style for your patient education videos
         </p>
 
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          {visualStyles.map((style) => (
-            <button
-              key={style.id}
-              onClick={() => onSelectStyle(style.id)}
-              className={`style-preset px-4 py-3 rounded-xl border-2 text-center transition-all ${
-                selectedStyle === style.id
-                  ? 'border-medflix-accent bg-medflix-accent/5 shadow-sm'
-                  : 'border-gray-200 hover:border-gray-300 bg-white'
-              }`}
-            >
-              <div className="text-2xl mb-1">{style.preview}</div>
-              <p className="font-medium text-sm text-gray-900">{style.name}</p>
-              <p className="text-xs text-gray-500">{style.subtitle}</p>
-            </button>
-          ))}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {visualStyles.map((style, idx) => {
+            const styleColors = ['bg-medflix-red', 'bg-medflix-blue', 'bg-medflix-yellow', 'bg-medflix-purple'];
+            const styleBorders = ['border-medflix-red', 'border-medflix-blue', 'border-medflix-yellow', 'border-medflix-purple'];
+            const styleColor = styleColors[idx % styleColors.length];
+            const styleBorder = styleBorders[idx % styleBorders.length];
+            return (
+              <button
+                key={style.id}
+                onClick={() => onSelectStyle(style.id)}
+                className={`style-preset px-4 py-4 rounded-3xl border-4 text-left transition-all hover:scale-105 ${
+                  selectedStyle === style.id
+                    ? `${styleBorder} bg-white shadow-xl scale-105`
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                }`}
+              >
+                <div className="flex gap-4 items-center">
+                  {/* Image or Emoji Placeholder */}
+                  {style.image ? (
+                    <img 
+                      src={style.image} 
+                      alt={style.name}
+                      className="w-24 h-24 rounded-2xl object-cover shadow-md"
+                    />
+                  ) : (
+                    <div className={`w-24 h-24 rounded-2xl flex items-center justify-center shadow-md border-3 ${
+                      selectedStyle === style.id ? `${styleColor} text-gray-900 border-gray-800` : `${styleColor} opacity-20 border-gray-400`
+                    }`}>
+                      <span className="text-5xl">{style.emoji || '🎬'}</span>
+                    </div>
+                  )}
+                  
+                  {/* Text Content */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-lg text-gray-900 mb-1">{style.name}</p>
+                    <p className="text-sm text-gray-600 font-semibold">{style.subtitle}</p>
+                    {!style.image && (
+                      <p className="text-xs text-gray-600 mt-2 italic">Add image in mockData.js</p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         <textarea
@@ -704,39 +754,62 @@ function SetupStep({
       {/* Avatar & Presenter Style */}
       <section>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Choose Your Presenter</h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-700 mb-4 font-medium">
           Select an AI avatar and presentation style for your education videos
         </p>
 
-        <div className="grid grid-cols-3 gap-3">
-          {AVATAR_PRESETS.map((avatar) => (
-            <button
-              key={avatar.id}
-              onClick={() => onSelectAvatar(avatar.id)}
-              className={`relative px-4 py-4 rounded-xl border-2 text-center transition-all ${
-                selectedAvatar === avatar.id
-                  ? 'border-medflix-accent bg-medflix-accent/5 shadow-md ring-2 ring-medflix-accent/20'
-                  : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-sm'
-              }`}
-            >
-              {selectedAvatar === avatar.id && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-medflix-accent rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-3.5 h-3.5 text-white" />
-                </div>
-              )}
-              <div className="text-3xl mb-2">{avatar.preview}</div>
-              <p className="font-semibold text-sm text-gray-900">{avatar.name}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{avatar.subtitle}</p>
-              <p className="text-[10px] text-gray-400 mt-1 font-mono">{avatar.avatar_style}</p>
-            </button>
-          ))}
+        <div className="grid grid-cols-3 gap-4">
+          {AVATAR_PRESETS.map((avatar, idx) => {
+            const avatarColors = ['bg-medflix-red', 'bg-medflix-blue', 'bg-medflix-yellow'];
+            const avatarBorders = ['border-medflix-red', 'border-medflix-blue', 'border-medflix-yellow'];
+            const avatarColor = avatarColors[idx % avatarColors.length];
+            const avatarBorder = avatarBorders[idx % avatarBorders.length];
+            return (
+              <button
+                key={avatar.id}
+                onClick={() => onSelectAvatar(avatar.id)}
+                className={`relative px-4 py-4 rounded-3xl border-4 text-center transition-all hover:scale-105 ${
+                  selectedAvatar === avatar.id
+                    ? `${avatarBorder} bg-white shadow-xl scale-105`
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                }`}
+              >
+                {selectedAvatar === avatar.id && (
+                  <div className={`absolute -top-2 -right-2 w-8 h-8 ${avatarColor} rounded-full flex items-center justify-center shadow-lg border-2 border-gray-800`}>
+                    <CheckCircle className="w-5 h-5 text-gray-900" />
+                  </div>
+                )}
+                
+                {/* Avatar Image or Emoji Placeholder */}
+                {avatar.image ? (
+                  <img 
+                    src={avatar.image} 
+                    alt={avatar.name}
+                    className="w-20 h-20 mx-auto mb-3 rounded-2xl object-cover shadow-md"
+                  />
+                ) : (
+                  <div className={`w-20 h-20 mx-auto mb-3 rounded-2xl flex items-center justify-center shadow-md border-3 ${
+                    selectedAvatar === avatar.id ? `${avatarColor} text-gray-900 border-gray-800` : `${avatarColor} opacity-20 border-gray-400`
+                  }`}>
+                    <span className="text-4xl">{avatar.emoji || '👤'}</span>
+                  </div>
+                )}
+                
+                <p className="font-black text-sm text-gray-900">{avatar.name}</p>
+                <p className="text-xs text-gray-600 mt-1 font-semibold">{avatar.subtitle}</p>
+                {!avatar.image && (
+                  <p className="text-xs text-gray-600 mt-1 italic font-medium">Add image</p>
+                )}
+              </button>
+            );
+          })}
         </div>
       </section>
 
       {/* Characters */}
       <section>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Characters</h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-700 mb-4 font-medium">
           Add characters for your education videos (optional)
         </p>
 
@@ -753,11 +826,11 @@ function SetupStep({
                   style={char.imagePreview ? { backgroundColor: char.imagePreview, borderStyle: 'solid', borderColor: char.imagePreview } : {}}
                 >
                   {char.imagePreview ? (
-                    <span className="text-white text-lg font-bold">
+                    <span className="text-gray-900 text-lg font-bold">
                       {char.name?.[0]?.toUpperCase() || '?'}
                     </span>
                   ) : (
-                    <ImageIcon className="w-5 h-5 text-gray-400" />
+                    <ImageIcon className="w-5 h-5 text-gray-600" />
                   )}
                 </button>
                 <div className="flex-1 grid grid-cols-2 gap-2">
@@ -784,9 +857,9 @@ function SetupStep({
                 </div>
                 <button
                   onClick={() => onRemoveCharacter(char.id)}
-                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                  className="p-2 text-gray-600 hover:text-red-500 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </div>
             ))}
@@ -795,9 +868,9 @@ function SetupStep({
 
         <button
           onClick={onAddCharacter}
-          className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 text-gray-600 rounded-xl hover:border-medflix-accent hover:text-medflix-accent transition-colors text-sm font-medium w-full justify-center"
+          className="flex items-center gap-2 px-4 py-2.5 border-3 border-dashed border-gray-400 text-gray-800 rounded-xl hover:border-medflix-accent hover:text-medflix-accent hover:bg-purple-50 transition-all text-sm font-bold w-full justify-center shadow-sm"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           Add Character
         </button>
       </section>
@@ -805,7 +878,7 @@ function SetupStep({
       {/* Materials */}
       <section>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Materials</h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-700 mb-4 font-medium">
           Upload medical PDFs, discharge summaries, or treatment plans
         </p>
 
@@ -821,13 +894,13 @@ function SetupStep({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 truncate">{mat.name}</p>
-                  <p className="text-xs text-gray-400">{mat.size}</p>
+                  <p className="text-sm text-gray-700 font-medium">{mat.size}</p>
                 </div>
                 <button
                   onClick={() => onRemoveMaterial(mat.id)}
-                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                  className="p-2 text-gray-600 hover:text-red-500 transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             ))}
@@ -836,9 +909,9 @@ function SetupStep({
 
         <button
           onClick={onAddMaterial}
-          className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 text-gray-600 rounded-xl hover:border-medflix-accent hover:text-medflix-accent transition-colors text-sm font-medium w-full justify-center"
+          className="flex items-center gap-2 px-4 py-2.5 border-3 border-dashed border-gray-400 text-gray-800 rounded-xl hover:border-medflix-accent hover:text-medflix-accent hover:bg-purple-50 transition-all text-sm font-bold w-full justify-center shadow-sm"
         >
-          <Upload className="w-4 h-4" />
+          <Upload className="w-5 h-5" />
           Upload PDF / Document
         </button>
       </section>
@@ -859,9 +932,9 @@ function SetupStep({
                 style={{ width: `${generationProgress}%` }}
               />
             </div>
-            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+            <div className="flex items-center gap-4 mt-3 text-sm text-gray-700 font-medium">
               <span className="flex items-center gap-1">
-                <Database className="w-3 h-3" /> OpenFDA + DailyMed
+                <Database className="w-4 h-4" /> OpenFDA + DailyMed
               </span>
               <span className="flex items-center gap-1">
                 <Brain className="w-3 h-3" /> Perplexity Sonar
@@ -875,14 +948,14 @@ function SetupStep({
           <button
             onClick={onGenerate}
             disabled={materials.length === 0}
-            className="w-full py-3.5 bg-medflix-accent text-white rounded-xl font-semibold hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-medflix-accent text-gray-900 rounded-xl font-bold hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 border-3 border-purple-700"
           >
             <Film className="w-5 h-5" />
             Generate Video Episodes
           </button>
         )}
         {materials.length === 0 && !isGenerating && (
-          <p className="text-xs text-gray-400 text-center mt-2">
+          <p className="text-sm text-gray-700 text-center mt-2 font-medium">
             Upload at least one medical document to generate videos
           </p>
         )}
@@ -915,7 +988,7 @@ function VideosStep({ videos, style, onComplete }) {
           <Film className="w-8 h-8 text-medflix-accent" />
         </div>
         <h3 className="text-xl font-bold text-gray-900 mb-2">Video Episodes</h3>
-        <p className="text-gray-500">
+        <p className="text-gray-700 font-medium">
           {processing > 0
             ? `${completed} of ${videos.length} videos ready — ${processing} still rendering with AI...`
             : promptReady > 0
@@ -961,7 +1034,7 @@ function VideosStep({ videos, style, onComplete }) {
                 <span className="text-xs font-medium text-medflix-accent bg-medflix-accent/10 px-2 py-0.5 rounded">
                   Episode {video.episode}
                 </span>
-                <span className="text-xs text-gray-400">{video.duration}</span>
+                <span className="text-sm text-gray-700 font-semibold">{video.duration}</span>
               </div>
               <h4 className="font-semibold text-gray-900 mb-1">{video.title}</h4>
               <p className="text-sm text-gray-600 leading-relaxed">{video.description}</p>
@@ -982,7 +1055,7 @@ function VideosStep({ videos, style, onComplete }) {
 
               {/* Clinical data badge */}
               {video.clinicalData && (
-                <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-400">
+                <div className="mt-1 flex items-center gap-2 text-xs text-gray-600 font-medium">
                   {video.clinicalData.fdaDrugsFound > 0 && (
                     <span>FDA: {video.clinicalData.fdaDrugsFound} drugs</span>
                   )}
@@ -1002,7 +1075,7 @@ function VideosStep({ videos, style, onComplete }) {
                     >
                       {expandedId === video.id ? 'Hide script' : 'View script'}
                     </button>
-                    <span className="text-xs text-gray-400">•</span>
+                    <span className="text-xs text-gray-600 font-bold">•</span>
                     <button
                       onClick={() => copyPrompt(video.prompt)}
                       className="text-xs font-medium text-medflix-dark hover:text-medflix-accent transition-colors"
@@ -1011,7 +1084,7 @@ function VideosStep({ videos, style, onComplete }) {
                       Copy script
                     </button>
                     {video?.research?.used_sonar && (
-                      <span className="text-[11px] text-gray-400 ml-1">
+                      <span className="text-xs text-gray-600 ml-1 font-medium">
                         (Sonar: {video.research?.sonar_model || 'sonar'})
                       </span>
                     )}
@@ -1059,13 +1132,13 @@ function VideosStep({ videos, style, onComplete }) {
 
       <button
         onClick={onComplete}
-        className="w-full py-3.5 bg-medflix-accent text-white rounded-xl font-semibold hover:bg-medflix-accentLight transition-colors flex items-center justify-center gap-2"
+        className="w-full py-3.5 bg-medflix-accent text-gray-900 rounded-xl font-bold hover:bg-medflix-accentLight transition-colors flex items-center justify-center gap-2 border-3 border-purple-700"
       >
         {processing > 0 ? 'Continue Anyway' : 'Continue to Complete'}
         <CheckCircle className="w-5 h-5" />
       </button>
       {processing > 0 && (
-        <p className="text-xs text-center text-gray-500 mt-2">
+        <p className="text-sm text-center text-gray-700 mt-2 font-medium">
           Videos will continue rendering in the background
         </p>
       )}
@@ -1082,7 +1155,7 @@ function CompleteStep({ videos, style, characters, onPublish }) {
           <CheckCircle className="w-10 h-10 text-green-600" />
         </div>
         <h3 className="text-2xl font-bold text-gray-900 mb-2">Content Ready!</h3>
-        <p className="text-gray-500">
+        <p className="text-gray-700 font-medium">
           Your patient education series has been generated and is ready to publish
         </p>
       </div>
@@ -1092,24 +1165,24 @@ function CompleteStep({ videos, style, characters, onPublish }) {
         <h4 className="font-semibold text-gray-900 mb-4">Content Summary</h4>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-gray-500">Visual Style</p>
-            <p className="font-medium text-gray-900">{style?.name || 'Custom'}</p>
+            <p className="text-gray-700 font-semibold">Visual Style</p>
+            <p className="font-bold text-gray-900">{style?.name || 'Custom'}</p>
           </div>
           <div>
-            <p className="text-gray-500">Total Episodes</p>
-            <p className="font-medium text-gray-900">{videos.length} videos</p>
+            <p className="text-gray-700 font-semibold">Total Episodes</p>
+            <p className="font-bold text-gray-900">{videos.length} videos</p>
           </div>
           <div>
-            <p className="text-gray-500">Characters</p>
-            <p className="font-medium text-gray-900">
+            <p className="text-gray-700 font-semibold">Characters</p>
+            <p className="font-bold text-gray-900">
               {characters.length > 0
                 ? characters.map((c) => c.name || 'Unnamed').join(', ')
                 : 'Auto-generated'}
             </p>
           </div>
           <div>
-            <p className="text-gray-500">Total Duration</p>
-            <p className="font-medium text-gray-900">~6 minutes</p>
+            <p className="text-gray-700 font-semibold">Total Duration</p>
+            <p className="font-bold text-gray-900">~6 minutes</p>
           </div>
         </div>
       </div>
@@ -1128,7 +1201,7 @@ function CompleteStep({ videos, style, characters, onPublish }) {
                   Episode {video.episode}: {video.title}
                 </p>
               </div>
-              <span className="text-xs text-gray-400">{video.duration}</span>
+              <span className="text-sm text-gray-700 font-semibold">{video.duration}</span>
             </div>
           ))}
         </div>
@@ -1136,12 +1209,12 @@ function CompleteStep({ videos, style, characters, onPublish }) {
 
       <button
         onClick={onPublish}
-        className="w-full py-4 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-lg"
+        className="w-full py-4 bg-green-600 text-gray-900 rounded-xl font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-lg border-3 border-green-800"
       >
         <CheckCircle className="w-6 h-6" />
         Publish to Recovery Plan
       </button>
-      <p className="text-xs text-center text-gray-500 mt-3">
+      <p className="text-sm text-center text-gray-700 mt-3 font-medium">
         This will add the video episodes to your Recovery Plan dashboard
       </p>
     </div>

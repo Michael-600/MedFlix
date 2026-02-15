@@ -256,7 +256,7 @@ export default function Workbench() {
                 {characters.map((c) => (
                   <div key={c.id} className="flex items-center gap-2">
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium"
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-gray-900 text-xs font-bold border-2 border-gray-700"
                       style={{ backgroundColor: c.imagePreview || '#d1d5db' }}
                     >
                       {c.name?.[0]?.toUpperCase() || '?'}
@@ -478,7 +478,7 @@ function SetupStep({
                 style={char.imagePreview ? { backgroundColor: char.imagePreview, borderStyle: 'solid', borderColor: char.imagePreview } : {}}
               >
                 {char.imagePreview ? (
-                  <span className="text-white text-lg font-bold">
+                  <span className="text-gray-900 text-lg font-bold">
                     {char.name?.[0]?.toUpperCase() || '?'}
                   </span>
                 ) : (
@@ -519,9 +519,9 @@ function SetupStep({
 
         <button
           onClick={onAddCharacter}
-          className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 text-gray-600 rounded-xl hover:border-medflix-accent hover:text-medflix-accent transition-colors text-sm font-medium w-full justify-center"
+          className="flex items-center gap-2 px-4 py-2.5 border-3 border-dashed border-gray-400 text-gray-800 rounded-xl hover:border-medflix-accent hover:text-medflix-accent hover:bg-purple-50 transition-all text-sm font-bold w-full justify-center shadow-sm"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           Add Character
         </button>
       </section>
@@ -560,9 +560,9 @@ function SetupStep({
 
         <button
           onClick={onAddMaterial}
-          className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 text-gray-600 rounded-xl hover:border-medflix-accent hover:text-medflix-accent transition-colors text-sm font-medium w-full justify-center"
+          className="flex items-center gap-2 px-4 py-2.5 border-3 border-dashed border-gray-400 text-gray-800 rounded-xl hover:border-medflix-accent hover:text-medflix-accent hover:bg-purple-50 transition-all text-sm font-bold w-full justify-center shadow-sm"
         >
-          <Upload className="w-4 h-4" />
+          <Upload className="w-5 h-5" />
           Upload PDF / Document
         </button>
       </section>
@@ -589,7 +589,7 @@ function SetupStep({
           <button
             onClick={onGenerate}
             disabled={materials.length === 0}
-            className="w-full py-3.5 bg-medflix-accent text-white rounded-xl font-semibold hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-medflix-accent text-gray-900 rounded-xl font-bold hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 border-3 border-purple-700"
           >
             <Film className="w-5 h-5" />
             Generate Storyboard
@@ -655,7 +655,7 @@ function StoryboardStep({ storyboard, onUpdateScene, onNext }) {
       <div className="flex justify-end">
         <button
           onClick={onNext}
-          className="flex items-center gap-2 px-6 py-3 bg-medflix-accent text-white rounded-xl font-medium hover:bg-medflix-accentLight transition-colors"
+          className="flex items-center gap-2 px-6 py-3 bg-medflix-accent text-gray-900 rounded-xl font-bold hover:bg-medflix-accentLight transition-colors border-2 border-purple-700"
         >
           Continue to References
           <ChevronRight className="w-4 h-4" />
@@ -699,9 +699,9 @@ function ReferencesStep({ materials, onAddMaterial, onRemoveMaterial, onNext, on
 
       <button
         onClick={onAddMaterial}
-        className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 text-gray-600 rounded-xl hover:border-medflix-accent hover:text-medflix-accent transition-colors text-sm font-medium w-full justify-center mb-8"
+        className="flex items-center gap-2 px-4 py-2.5 border-3 border-dashed border-gray-400 text-gray-800 rounded-xl hover:border-medflix-accent hover:text-medflix-accent hover:bg-purple-50 transition-all text-sm font-bold w-full justify-center mb-8 shadow-sm"
       >
-        <Plus className="w-4 h-4" />
+        <Plus className="w-5 h-5" />
         Add Reference Material
       </button>
 
@@ -715,7 +715,7 @@ function ReferencesStep({ materials, onAddMaterial, onRemoveMaterial, onNext, on
         </button>
         <button
           onClick={onNext}
-          className="flex items-center gap-2 px-6 py-3 bg-medflix-accent text-white rounded-xl font-medium hover:bg-medflix-accentLight transition-colors"
+          className="flex items-center gap-2 px-6 py-3 bg-medflix-accent text-gray-900 rounded-xl font-bold hover:bg-medflix-accentLight transition-colors border-2 border-purple-700"
         >
           Generate Videos
           <ChevronRight className="w-4 h-4" />
@@ -768,7 +768,7 @@ function VideosStep({ storyboard, isGenerating, generationProgress, onGenerate, 
             </button>
             <button
               onClick={onGenerate}
-              className="flex items-center gap-2 px-6 py-3 bg-medflix-accent text-white rounded-xl font-medium hover:bg-medflix-accentLight transition-colors"
+              className="flex items-center gap-2 px-6 py-3 bg-medflix-accent text-gray-900 rounded-xl font-bold hover:bg-medflix-accentLight transition-colors border-2 border-purple-700"
             >
               <Film className="w-5 h-5" />
               Generate All Scenes
@@ -879,7 +879,7 @@ function CompleteStep({ storyboard, style, characters, onPublish, onBack }) {
         </button>
         <button
           onClick={onPublish}
-          className="flex items-center gap-2 px-8 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors"
+          className="flex items-center gap-2 px-8 py-3 bg-green-600 text-gray-900 rounded-xl font-bold hover:bg-green-700 transition-colors border-3 border-green-800"
         >
           <CheckCircle className="w-5 h-5" />
           Publish to Patient Portal
