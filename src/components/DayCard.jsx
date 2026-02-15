@@ -52,34 +52,31 @@ function BattleCardReveal({ card, revealed }) {
   if (!card) return null
 
   return (
-    <div className="perspective-1000 w-full">
+    <div style={{ perspective: '1000px' }} className="w-full">
       <div
-        className={`relative w-full transition-transform duration-700 preserve-3d ${
-          flipped ? 'rotate-y-180' : ''
-        }`}
+        className="relative w-full transition-transform duration-700"
         style={{
           transformStyle: 'preserve-3d',
           transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          minHeight: '200px',
         }}
       >
         {/* Card Back (mystery) */}
         <div
-          className={`w-full rounded-2xl p-4 text-center border-4 border-dashed border-gray-300 bg-gradient-to-br from-gray-100 to-gray-200 ${
-            flipped ? 'hidden' : ''
-          }`}
+          className="absolute inset-0 w-full h-full rounded-2xl p-5 flex flex-col items-center justify-center border-4 border-dashed border-gray-300 bg-gradient-to-br from-gray-100 to-gray-200"
+          style={{ backfaceVisibility: 'hidden' }}
         >
           <div className="text-4xl mb-2">❓</div>
           <p className="text-sm font-bold text-gray-500">Mystery Card</p>
           <p className="text-xs text-gray-400">Answer the quiz to reveal!</p>
         </div>
 
-        {/* Card Front (revealed) */}
+        {/* Card Front (revealed) — pre-rotated 180deg so it reads correctly when parent flips */}
         <div
-          className={`w-full rounded-2xl p-4 text-center border-4 ${card.border} bg-gradient-to-br ${card.color} shadow-xl ${
-            flipped ? '' : 'hidden'
-          }`}
+          className={`absolute inset-0 w-full h-full rounded-2xl p-5 flex flex-col items-center justify-center border-4 ${card.border} bg-gradient-to-br ${card.color} shadow-xl`}
+          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
         >
-          <div className="text-5xl mb-2 drop-shadow-lg">{card.emoji}</div>
+          <div className="text-5xl mb-1 drop-shadow-lg">{card.emoji}</div>
           <h4 className="text-lg font-black text-white drop-shadow-md">{card.name}</h4>
           <div className="flex items-center justify-center gap-0.5 my-1">
             {[...Array(5)].map((_, i) => (
