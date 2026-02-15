@@ -147,7 +147,7 @@ function buildEpisode2(patient, clinicalData) {
       },
       {
         script: goodNews,
-        visual: `Big thumbs up with sparkles! Text: "GREAT NEWS!" in rainbow letters. ${dx.includes('asthma') ? 'Cartoon kids playing soccer, swimming, dancing — all with asthma inhalers in their pockets, big smiles.' : dx.includes('ear') || dx.includes('otitis') ? 'Calendar showing days counting down with smiley faces getting bigger each day. "Bye-bye germs!" with the germs looking defeated.' : dx.includes('leukemia') || dx.includes('cancer') ? 'Cartoon kids who beat leukemia playing and laughing together, wearing superhero capes. A big trophy labeled "WINNER!" Confetti. Text: "Doctors are AMAZING at fighting this! You\\'ve got this!"' : 'Encouraging celebration scene with the child character looking confident and happy.'}`,
+        visual: `Big thumbs up with sparkles! Text: "GREAT NEWS!" in rainbow letters. ${dx.includes('asthma') ? 'Cartoon kids playing soccer, swimming, dancing — all with asthma inhalers in their pockets, big smiles.' : dx.includes('ear') || dx.includes('otitis') ? 'Calendar showing days counting down with smiley faces getting bigger each day. "Bye-bye germs!" with the germs looking defeated.' : dx.includes('leukemia') || dx.includes('cancer') ? 'Cartoon kids who beat leukemia playing and laughing together, wearing superhero capes. A big trophy labeled "WINNER!" Confetti. Text: "Doctors are AMAZING at fighting this! You\'ve got this!"' : 'Encouraging celebration scene with the child character looking confident and happy.'}`,
       },
       {
         script: `You did great learning about this, ${name}! In the next episode, we'll learn about your SUPER MEDICINE that helps your body! See you there, Health Hero!`,
