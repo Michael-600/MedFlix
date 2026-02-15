@@ -82,9 +82,10 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
       setMedications(savedMeds)
     }
 
+    // Check if Poke is configured
     fetch('/api/health')
       .then(r => r.json())
-      .then(data => setPokeConfigured(data.twilio === true))
+      .then(data => setPokeConfigured(data.poke === true))
       .catch(() => setPokeConfigured(false))
   }, [userId])
 
@@ -227,9 +228,9 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
       <div className="max-w-3xl mx-auto">
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
           <WifiOff className="w-10 h-10 text-amber-500 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-amber-800 mb-1">SMS Not Configured</h3>
+          <h3 className="text-lg font-semibold text-amber-800 mb-1">Poke Not Configured</h3>
           <p className="text-sm text-amber-600">
-            Medication reminders require Twilio credentials. Add <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">TWILIO_ACCOUNT_SID</code>, <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">TWILIO_AUTH_TOKEN</code>, and <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">TWILIO_PHONE_NUMBER</code> to your server environment.
+            Medication reminders require Poke API credentials. Add <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">POKE_API_KEY</code> to your server <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">.env</code> file to enable intelligent medication reminders.
           </p>
         </div>
       </div>

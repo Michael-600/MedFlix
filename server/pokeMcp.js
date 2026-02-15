@@ -187,8 +187,12 @@ server.tool(
       if (!med) {
         return { content: [{ type: 'text', text: `Medication "${medicationName}" not found in ${data.name}'s schedule.` }] }
       }
-      const timestamp = new Date().toLocaleTimeString()
-      return { content: [{ type: 'text', text: `Logged: ${data.name} took ${med.name} (${med.dosage}) at ${timestamp}.` }] }
+      // Persist to adherence log via backend
+      const takenAt = new Date().toISOString()
+      try {
+        await api('/api/poke/log-adherence', { patientId, medicationName: med.name, time: null, takenAt })
+      } catch {}
+      return { content: [{ type: 'text', text: `Logged: ${data.name} took ${med.name} (${med.dosage}) at ${new Date(takenAt).toLocaleTimeString()}.` }] }
     } catch (e) {
       return { content: [{ type: 'text', text: `Error: ${e.message}` }] }
     }
@@ -218,11 +222,43 @@ server.tool(
   }
 )
 
+// ──────────────────────────────────────────────────────
+//  Tool 7: Get adherence summary for today
+// ──────────────────────────────────────────────────────
+server.tool(
+  'get_adherence_summary',
+  "Returns today's medication adherence summary for a patient — how many doses taken vs pending.",
+  { patientId: z.string().describe('The patient ID from MedFlix') },
+  async ({ patientId }) => {
+    try {
+      const data = await api(`/api/poke/status/${patientId}`)
+      if (data.error) {
+        return { content: [{ type: 'text', text: `Patient not found: ${data.error}` }] }
+      }
+      const today = new Date().toISOString().slice(0, 10)
+      const todayLogs = (data.adherenceLog || []).filter(l => l.takenAt?.startsWith(today))
+      const activeMeds = (data.medications || []).filter(m => m.active)
+      const totalDoses = activeMeds.reduce((sum, m) => sum + (m.times?.length || 1), 0)
+      const takenNames = [...new Set(todayLogs.map(l => l.medicationName))]
+      const pending = activeMeds.filter(m => !takenNames.includes(m.name)).map(m => m.name)
+      const lines = [
+        `Adherence summary for ${data.name} (${today}):`,
+        `- Doses logged today: ${todayLogs.length}/${totalDoses}`,
+        `- Taken: ${takenNames.join(', ') || 'none yet'}`,
+        `- Pending: ${pending.join(', ') || 'all done!'}`,
+      ]
+      return { content: [{ type: 'text', text: lines.join('\n') }] }
+    } catch (e) {
+      return { content: [{ type: 'text', text: `Error: ${e.message}` }] }
+    }
+  }
+)
+
 async function main() {
   const transport = new StdioServerTransport()
   await server.connect(transport)
   console.error('MedFlix MCP server running on stdio')
-  console.error('Tools: get_patient_context, get_medication_schedule, search_clinical_evidence, research_medical_topic, log_medication_taken, send_reminder')
+  console.error('Tools: get_patient_context, get_medication_schedule, search_clinical_evidence, research_medical_topic, log_medication_taken, send_reminder, get_adherence_summary')
 }
 
 main().catch(console.error)
