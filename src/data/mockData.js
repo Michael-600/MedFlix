@@ -172,6 +172,35 @@ export const defaultRecoveryPlan = {
   ],
 }
 
+export const defaultMedications = {
+  'Type 2 Diabetes': [
+    { name: 'Metformin', dosage: '500mg', frequency: 'twice_daily', times: ['08:00', '20:00'], instructions: 'Take with food' },
+    { name: 'Glipizide', dosage: '5mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Take 30 min before breakfast' },
+  ],
+  'Breast Cancer - Stage II': [
+    { name: 'Tamoxifen', dosage: '20mg', frequency: 'once_daily', times: ['09:00'], instructions: 'Take at the same time each day' },
+    { name: 'Ondansetron', dosage: '8mg', frequency: 'twice_daily', times: ['08:00', '20:00'], instructions: 'Take 30 min before meals if nauseous' },
+  ],
+  'Knee Replacement Recovery': [
+    { name: 'Acetaminophen', dosage: '500mg', frequency: 'three_times_daily', times: ['08:00', '14:00', '20:00'], instructions: 'Take with water' },
+    { name: 'Enoxaparin', dosage: '40mg', frequency: 'once_daily', times: ['09:00'], instructions: 'Inject subcutaneously as directed' },
+  ],
+  'Cardiac Bypass Recovery': [
+    { name: 'Aspirin', dosage: '81mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Take with food' },
+    { name: 'Metoprolol', dosage: '25mg', frequency: 'twice_daily', times: ['08:00', '20:00'], instructions: 'Do not stop abruptly' },
+    { name: 'Atorvastatin', dosage: '40mg', frequency: 'once_daily', times: ['21:00'], instructions: 'Take at bedtime' },
+  ],
+  'Chronic Back Pain Management': [
+    { name: 'Ibuprofen', dosage: '400mg', frequency: 'three_times_daily', times: ['08:00', '14:00', '20:00'], instructions: 'Take with food' },
+    { name: 'Cyclobenzaprine', dosage: '10mg', frequency: 'once_daily', times: ['21:00'], instructions: 'Take at bedtime, may cause drowsiness' },
+  ],
+  'Post-Stroke Rehabilitation': [
+    { name: 'Clopidogrel', dosage: '75mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Take at the same time each day' },
+    { name: 'Lisinopril', dosage: '10mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Monitor blood pressure regularly' },
+    { name: 'Atorvastatin', dosage: '80mg', frequency: 'once_daily', times: ['21:00'], instructions: 'Take at bedtime' },
+  ],
+}
+
 export const sampleDiagnoses = [
   'Breast Cancer - Stage II',
   'Type 2 Diabetes',
