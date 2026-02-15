@@ -57,8 +57,24 @@ body {
   animation: float-gentle 6s ease-in-out infinite;
 }
 
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-500 {
+  animation-delay: 0.5s;
+}
+
+.animation-delay-700 {
+  animation-delay: 0.7s;
+}
+
 .animation-delay-1000 {
   animation-delay: 1s;
+}
+
+.animation-delay-1500 {
+  animation-delay: 1.5s;
 }
 
 .animation-delay-2000 {
@@ -127,11 +143,11 @@ button, a, input, select, textarea {
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
+  animation: fadeIn 0.6s ease-out forwards;
 }
 
 .animate-slideUp {
-  animation: slideUp 0.4s ease-out forwards;
+  animation: slideUp 0.6s ease-out forwards;
 }
 
 .animate-pulse-soft {

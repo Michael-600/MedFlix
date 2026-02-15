@@ -59,45 +59,48 @@ export default function Landing() {
         ></div>
 
         {/* Hero Content */}
-        <div className="relative z-10 max-w-4xl mx-auto px-6 py-32 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-100 rounded-full text-xs font-medium text-purple-700 mb-6">
-            <Sparkles className="w-3.5 h-3.5" />
-            Transform Medical Info into Fun Videos
-          </div>
-          
-          <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6 text-gray-900">
-            Your Health Story,
-            <br />
-            <span className="text-medflix-blue">Episode by Episode!</span>
+        <div className="relative z-10 max-w-5xl mx-auto px-6 py-32 text-center">
+          <h1 className="text-6xl md:text-7xl font-bold leading-tight mb-6 animate-slideUp whitespace-nowrap">
+            <span className="bg-gradient-to-r from-medflix-purple via-medflix-blue to-medflix-red bg-clip-text text-transparent">
+              The Netflix for Healthcare
+            </span>
           </h1>
           
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-            MedFlix turns complex medical documents into personalized animated videos 
-            that kids actually understand and enjoy watching. Learning about your health 
-            has never been this fun!
+          <p className="text-xl text-gray-700 max-w-2xl mx-auto mb-12 leading-relaxed font-medium animate-slideUp animation-delay-200">
+            Transform complex medical information into engaging, personalized video episodes that make learning about health intuitive and enjoyable.
           </p>
 
-          {/* Stats */}
-          <div className="flex items-center justify-center gap-12 mb-10">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-medflix-red mb-1">7 Days</div>
-              <div className="text-sm text-gray-600">of fun lessons</div>
+          {/* Professional Stats */}
+          <div className="flex items-center justify-center gap-16 mb-12 animate-fadeIn animation-delay-500">
+            <div className="text-center group">
+              <div className="flex items-center justify-center mb-2">
+                <Shield className="w-8 h-8 text-medflix-blue group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="text-sm font-semibold text-gray-900">Clinically Reviewed</div>
+              <div className="text-xs text-gray-500">Evidence-based content</div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-medflix-blue mb-1">24/7</div>
-              <div className="text-sm text-gray-600">AI support</div>
+            <div className="text-center group">
+              <div className="flex items-center justify-center mb-2">
+                <Film className="w-8 h-8 text-medflix-purple group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="text-sm font-semibold text-gray-900">Visual Learning</div>
+              <div className="text-xs text-gray-500">Animated episodes</div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-medflix-purple mb-1">100%</div>
-              <div className="text-sm text-gray-600">personalized</div>
+            <div className="text-center group">
+              <div className="flex items-center justify-center mb-2">
+                <Users className="w-8 h-8 text-medflix-red group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="text-sm font-semibold text-gray-900">Patient-Centered</div>
+              <div className="text-xs text-gray-500">Personalized content</div>
             </div>
           </div>
 
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-medflix-purple text-gray-900 rounded-xl font-bold text-lg hover:bg-medflix-purple-dark transition-all shadow-lg hover:scale-105 border-4 border-purple-700"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-medflix-purple to-medflix-blue text-white rounded-xl font-bold text-lg hover:shadow-2xl transition-all hover:scale-105 group animate-fadeIn animation-delay-700"
           >
-            Start Learning Now! →
+            Get Started
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
       </section>
@@ -112,15 +115,14 @@ export default function Landing() {
           </p>
         </div>
 
-        {/* Feature 1 */}
+        {/* Feature 1 - Video Player */}
         <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
-          <div className="bg-red-50 rounded-3xl p-8 h-80 flex items-center justify-center border-4 border-red-200">
-            <div className="text-center">
-              <div className="w-32 h-32 bg-medflix-red rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-xl border-4 border-red-700">
-                <Film className="w-16 h-16 text-gray-900" />
-              </div>
-              <p className="text-sm text-gray-700 font-bold">Daily Video Episodes</p>
-            </div>
+          <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-3xl p-4 overflow-hidden border-4 border-purple-200 shadow-xl">
+            <img 
+              src="/images/feature-video-player.png" 
+              alt="Watch your personalized videos"
+              className="w-full h-auto rounded-2xl"
+            />
           </div>
           <div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
@@ -135,48 +137,46 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Feature 2 */}
+        {/* Feature 2 - Visual Styles */}
         <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
           <div className="order-2 md:order-1">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
               🎨 Choose Your Favorite Style!
             </h3>
             <p className="text-gray-600 leading-relaxed text-base">
-              Love cartoons? Prefer anime? Want it realistic? You pick! Choose from 30+ 
-              different visual styles and create your own avatar. Your videos are 
-              personalized to your age, interests, and learning style. It's like Netflix, 
+              Love Friends? Prefer anime? Want Spider-Verse or Pixar style? You pick! Choose 
+              from different visual styles like Zootopia, The Office, or South Park. Your videos 
+              are personalized to your interests and learning style. It's like Netflix, 
               but for your health!
             </p>
           </div>
-          <div className="bg-blue-50 rounded-3xl p-8 h-80 flex items-center justify-center order-1 md:order-2 border-4 border-blue-200">
-            <div className="text-center">
-              <div className="w-32 h-32 bg-medflix-blue rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-xl border-4 border-blue-700">
-                <Users className="w-16 h-16 text-gray-900" />
-              </div>
-              <p className="text-sm text-gray-700 font-bold">Your Style, Your Way</p>
-            </div>
+          <div className="bg-gradient-to-br from-red-50 to-purple-50 rounded-3xl p-4 overflow-hidden order-1 md:order-2 border-4 border-red-200 shadow-xl">
+            <img 
+              src="/images/feature-visual-styles.png" 
+              alt="Choose your visual style"
+              className="w-full h-auto rounded-2xl"
+            />
           </div>
         </div>
 
-        {/* Feature 3 */}
+        {/* Feature 3 - Avatars */}
         <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="bg-purple-50 rounded-3xl p-8 h-80 flex items-center justify-center border-4 border-purple-200">
-            <div className="text-center">
-              <div className="w-32 h-32 bg-medflix-purple rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-xl border-4 border-purple-700">
-                <BookOpen className="w-16 h-16 text-gray-900" />
-              </div>
-              <p className="text-sm text-gray-700 font-bold">24/7 AI Assistant</p>
-            </div>
+          <div className="bg-gradient-to-br from-blue-50 to-yellow-50 rounded-3xl p-4 overflow-hidden border-4 border-blue-200 shadow-xl">
+            <img 
+              src="/images/feature-avatars.png" 
+              alt="Choose your characters"
+              className="w-full h-auto rounded-2xl"
+            />
           </div>
           <div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              💬 Ask Questions Anytime
+              🎭 Pick Your Characters!
             </h3>
             <p className="text-gray-600 leading-relaxed text-base">
-              Got questions? Our friendly AI assistant is always here to help! Chat with it 
-              anytime, ask about your medications, or get reminders. Plus, have live video 
-              chats with an AI doctor that knows all about your health. Never feel confused 
-              or alone on your health journey!
+              Choose fun characters to be in your videos! From friendly doctors to Santa, 
+              SpongeBob, or Mickey Mouse - you decide who teaches you about your health. 
+              Each character makes learning fun and helps you understand your treatment 
+              in a way that feels exciting and personal!
             </p>
           </div>
         </div>

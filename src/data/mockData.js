@@ -6,7 +6,7 @@ export const visualStyles = [
     description: 'Live-action sitcom aesthetic. Warm, bright color palette with cozy interior lighting from practical lamps and natural windows. Soft, even lighting reminiscent of multi-camera TV setup. Natural skin tones, realistic human features and expressions, conversational body language. Modern 90s-2000s style with contemporary casual wardrobe. Ambient: light background chatter, everyday room tone. Shot on film with slight warmth. No harsh shadows, no cold tones.',
     color: '#9333ea',
     icon: 'Video',
-    image: null,
+    image: '/images/friends-cast.png',
     emoji: '🎬',
   },
   {
@@ -16,7 +16,7 @@ export const visualStyles = [
     description: 'Disney 3D animation style with vibrant, saturated colors and smooth character models. Expressive anthropomorphic characters with detailed fur/skin textures. Bright, optimistic lighting with soft shadows. Clean environments with rich detail. Cinematic camera angles with depth of field effects.',
     color: '#3b82f6',
     icon: 'Sparkles',
-    image: null,
+    image: '/images/zootopia.png',
     emoji: '🦊',
   },
   {
@@ -26,7 +26,7 @@ export const visualStyles = [
     description: 'Japanese anime aesthetic with clean line art and cel-shaded coloring. Expressive character designs with large, detailed eyes. Dynamic action poses and emotional expressions. Soft gradients and atmospheric lighting. Cherry blossom and nature motifs for medical settings.',
     color: '#ec4899',
     icon: 'Palette',
-    image: null,
+    image: '/images/anime.png',
     emoji: '🎨',
   },
   {
@@ -36,7 +36,7 @@ export const visualStyles = [
     description: 'Mockumentary style with handheld camera feel and natural office lighting. Documentary-style talking head interviews. Realistic settings with fluorescent office lighting. Deadpan humor delivery with direct-to-camera moments. Casual, everyday wardrobe and relatable environments.',
     color: '#f59e0b',
     icon: 'Camera',
-    image: null,
+    image: '/images/the-office.png',
     emoji: '📷',
   },
   {
@@ -46,7 +46,7 @@ export const visualStyles = [
     description: 'Pixar-quality 3D animation with incredible attention to detail in textures and lighting. Heartwarming character designs with exaggerated proportions. Rich, cinematic color grading with volumetric lighting. Emotionally resonant storytelling through visual cues.',
     color: '#8b5cf6',
     icon: 'Film',
-    image: null,
+    image: '/images/pixar.png',
     emoji: '💡',
   },
   {
@@ -56,7 +56,7 @@ export const visualStyles = [
     description: 'Bold comic book animation with halftone dots, Ben-Day dots, and thick ink outlines. Dynamic panel compositions and split-screen storytelling. Vibrant pop art colors with dramatic contrast. Kinetic energy in every frame with motion blur effects.',
     color: '#ef4444',
     icon: 'Zap',
-    image: null,
+    image: '/images/spider-verse.png',
     emoji: '⚡',
   },
   {
@@ -66,7 +66,7 @@ export const visualStyles = [
     description: 'Simple cutout animation with flat geometric shapes and bold outlines. Minimalist character designs with exaggerated expressions. Bright, primary color palette. Paper-craft aesthetic with simple backgrounds. Direct, blunt delivery style.',
     color: '#f97316',
     icon: 'FileText',
-    image: null,
+    image: '/images/south-park.png',
     emoji: '✂️',
   },
   {

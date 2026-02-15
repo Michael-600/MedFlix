@@ -33,7 +33,7 @@ const AVATAR_PRESETS = [
     voice_id: '1bd001e7e50f421d891986aad5571571',
     avatar_style: 'normal',
     icon: 'User',
-    image: null, // Add your licensed avatar image here
+    image: '/images/avatar-female.png',
     emoji: '👩‍⚕️',
   },
   {
@@ -44,52 +44,52 @@ const AVATAR_PRESETS = [
     voice_id: '077ab11b14f04ce0b49b5f0f3ccb1573',
     avatar_style: 'normal',
     icon: 'UserCircle',
-    image: null,
+    image: '/images/avatar-male.png',
     emoji: '👨‍⚕️',
   },
   {
-    id: 'anna',
-    name: 'Anna',
-    subtitle: 'Warm female presenter',
+    id: 'santa',
+    name: 'Santa',
+    subtitle: 'Jolly holiday character',
     avatar_id: 'Anna_public_3_20240108',
     voice_id: '2d5b0e6cf36f460aa7fc47e3eee4ba54',
     avatar_style: 'normal',
     icon: 'User',
-    image: null,
-    emoji: '👩‍🏫',
+    image: '/images/avatar-santa.png',
+    emoji: '🎅',
   },
   {
-    id: 'edward',
-    name: 'Edward',
-    subtitle: 'Confident male expert',
+    id: 'easter-bunny',
+    name: 'Easter Bunny',
+    subtitle: 'Cheerful bunny friend',
     avatar_id: 'Tyler-incasualsuit-20220721',
     voice_id: '131a436c47064f708210df6628ef8f32',
     avatar_style: 'normal',
     icon: 'UserCircle',
-    image: null,
-    emoji: '👨‍💼',
+    image: '/images/avatar-easter-bunny.png',
+    emoji: '🐰',
   },
   {
-    id: 'closeup',
-    name: 'Close-Up',
-    subtitle: 'Intimate close-up style',
+    id: 'spongebob',
+    name: 'SpongeBob',
+    subtitle: 'Fun cartoon character',
     avatar_id: 'Angela-inTshirt-20220820',
     voice_id: '1bd001e7e50f421d891986aad5571571',
-    avatar_style: 'closeUp',
+    avatar_style: 'normal',
     icon: 'Focus',
-    image: null,
-    emoji: '👤',
+    image: '/images/avatar-spongebob.png',
+    emoji: '🧽',
   },
   {
-    id: 'circle',
-    name: 'Circle Overlay',
-    subtitle: 'Avatar in a circle overlay',
+    id: 'mickey',
+    name: 'Mickey Mouse',
+    subtitle: 'Classic Disney character',
     avatar_id: 'Angela-inTshirt-20220820',
     voice_id: '1bd001e7e50f421d891986aad5571571',
-    avatar_style: 'circle',
+    avatar_style: 'normal',
     icon: 'Circle',
-    image: null,
-    emoji: '⭕',
+    image: '/images/avatar-mickey.png',
+    emoji: '🐭',
   },
 ]
 
@@ -848,10 +848,13 @@ function SetupStep({
                     <option>Doctor</option>
                     <option>Nurse</option>
                     <option>Patient</option>
-                    <option>Family Member</option>
-                    <option>Therapist</option>
-                    <option>Pharmacist</option>
-                    <option>Narrator</option>
+                    <option>Parent</option>
+                    <option>Grandparent</option>
+                    <option>Sibling</option>
+                    <option>Uncle/Aunt</option>
+                    <option>Cousin</option>
+                    <option>Guardian</option>
+                    <option>Family Friend</option>
                   </select>
                 </div>
                 <button
