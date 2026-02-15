@@ -391,12 +391,13 @@ export default function VideoPlayer({
             {progress >= 100 && (
               <div className="absolute inset-0 bg-black/90 flex items-center justify-center animate-fadeIn">
                 <div className="text-center max-w-md px-6">
-                  <div className="w-24 h-24 shape-star bg-yellow-400 mx-auto mb-6 flex items-center justify-center shadow-2xl border-3 border-yellow-600">
-                    <span className="text-gray-900 font-black text-4xl">★</span>
-                  </div>
-                  <h4 className="text-gray-100 text-3xl font-black mb-3">You Did It!</h4>
+                  <div className="text-7xl mb-4 animate-bounce">🌟</div>
+                  <h4 className="text-gray-100 text-4xl font-black mb-3">AMAZING JOB!</h4>
+                  <p className="text-yellow-300 text-2xl mb-2 font-black">
+                    ⭐ ⭐ ⭐ ⭐ ⭐
+                  </p>
                   <p className="text-gray-300 text-xl mb-8 font-bold">
-                    Day {day.day} Complete!
+                    Episode {day.day} Complete!
                   </p>
 
                   {/* Call-to-action for Live Avatar */}
@@ -406,7 +407,7 @@ export default function VideoPlayer({
                       <p className="text-gray-900 font-black text-lg">Have Questions?</p>
                     </div>
                     <p className="text-gray-700 text-base mb-4 font-bold">
-                      Chat with me! I can help!
+                      Talk to your Health Buddy!
                     </p>
                     <button
                       onClick={() => {
@@ -416,7 +417,7 @@ export default function VideoPlayer({
                       className="w-full px-6 py-4 bg-medflix-blue text-gray-900 rounded-2xl font-black text-lg hover:bg-medflix-blue-dark transition-all shadow-lg hover:scale-105 flex items-center justify-center gap-3 border-3 border-blue-700"
                     >
                       <Video className="w-6 h-6" />
-                      Video Chat
+                      Talk to Doc
                     </button>
                   </div>
 
@@ -425,7 +426,7 @@ export default function VideoPlayer({
                       onClick={onComplete}
                       className="px-8 py-4 bg-green-500 text-gray-900 rounded-2xl font-black text-lg hover:bg-green-600 transition-all shadow-xl hover:scale-105 border-3 border-green-700"
                     >
-                      Mark as Done! ✓
+                      I Did It! ⭐
                     </button>
                     <button
                       onClick={onClose}

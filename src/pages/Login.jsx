@@ -15,7 +15,7 @@ export default function Login() {
   const handleSelectRole = (newRole) => {
     setRole(newRole)
     if (newRole === 'doctor') {
-      setName('Dr. Sarah Chen')
+      setName('Dr. Maya Patel')
       setSelectedPatientId(null)
     } else {
       setName('')
@@ -78,7 +78,7 @@ export default function Login() {
             <Logo size="xl" showText={false} />
           </div>
           <h1 className="text-5xl font-black text-gray-900 mb-2">MedFlix</h1>
-          <p className="text-xl text-gray-700 font-semibold">Learn & Grow with Fun!</p>
+          <p className="text-xl text-gray-700 font-semibold">Kids' Health Adventures!</p>
         </div>
 
         {/* Login Card */}
@@ -152,7 +152,7 @@ export default function Login() {
             {role === 'patient' && (
               <div>
               <label className="block text-base font-bold text-gray-900 mb-3">
-                Choose your avatar!
+                Who are you? Pick yourself!
               </label>
                 <div className="space-y-2">
                   {allPatients.map((pt) => {
@@ -168,21 +168,17 @@ export default function Login() {
                             : 'border-gray-300 hover:border-medflix-yellow bg-white hover:bg-gradient-to-r hover:from-yellow-50/30 hover:to-transparent'
                         }`}
                       >
-                        <div className={`w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-md ${
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100 text-3xl flex-shrink-0 shadow-md ${
                           isSelected ? 'ring-4 ring-medflix-yellow' : 'ring-2 ring-gray-300'
                         }`}>
-                          <img 
-                            src={pt.avatar}
-                            alt={pt.name}
-                            className="w-full h-full object-cover"
-                          />
+                          {pt.avatar || '🧒'}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`font-semibold ${isSelected ? 'text-purple-700' : 'text-gray-900'}`}>
-                            {pt.name}
+                          <p className={`font-black text-lg ${isSelected ? 'text-purple-700' : 'text-gray-900'}`}>
+                            {pt.name} {pt.emoji || ''}
                           </p>
-                          <p className="text-sm text-gray-700 truncate leading-relaxed font-medium">
-                            {pt.age}yo {pt.sex} • {pt.diagnosis}
+                          <p className="text-sm text-gray-700 truncate leading-relaxed font-bold">
+                            Age {pt.age} • {pt.diagnosis}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 text-sm text-gray-700 flex-shrink-0 font-bold">
@@ -206,7 +202,7 @@ export default function Login() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Dr. Sarah Chen"
+                  placeholder="Dr. Maya Patel"
                   className="w-full px-4 py-4 rounded-2xl border-4 border-gray-300 bg-white focus:border-medflix-blue focus:ring-4 focus:ring-blue-100 outline-none transition-all text-lg font-semibold"
                   required
                 />

@@ -13,7 +13,7 @@ import { samplePatient } from '../data/patientData'
 
 const STATE = { IDLE: 'idle', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error' }
 
-// ── Curated avatar presets (medical-relevant, with real API IDs) ──
+// ── Curated avatar presets (kid-friendly, with real API IDs) ──
 const AVATAR_PRESETS = [
   {
     id: 'fc9c1f9f-bc99-4fd9-a6b2-8b4b5669a046',
@@ -40,7 +40,7 @@ const AVATAR_PRESETS = [
     default_voice: { id: 'de5574fc-009e-4a01-a881-9919ef8f5a0c', name: 'Ann - IA' },
   },
   {
-    id: null, // placeholder — will use Dexter Doctor Sitting
+    id: null,
     name: 'Dexter',
     subtitle: 'Doctor (Sitting)',
     tag: null,
@@ -59,12 +59,12 @@ const AVATAR_PRESETS = [
   },
   {
     id: null,
-    name: 'Shawn',
-    subtitle: 'Therapist',
-    tag: null,
-    preview_url: 'https://files2.heygen.ai/avatar/v3/db2fb7fd0d044b908395a0111fa44d37_44946/preview_talk_4.webp',
-    default_voice: { id: '51afbab6-7af4-473b-95fc-6ce26aac8bb1', name: 'Shawn - IA' },
-    _lookupName: 'Shawn Therapist',
+    name: 'Santa',
+    subtitle: 'Health Buddy',
+    tag: 'Kids Fav',
+    preview_url: null,
+    default_voice: null,
+    _lookupName: 'Santa',
   },
 ]
 
@@ -94,23 +94,24 @@ const LANGUAGE_OPTIONS = [
  */
 function buildPatientContextPrompt(pt) {
   if (!pt) return ''
+  const firstName = (pt.name || 'friend').split(' ')[0]
   const meds = (pt.medications || [])
-    .map((m) => `${m.name} ${m.dose} ${m.frequency} (${m.purpose})`)
+    .map((m) => `${m.name} (${m.purpose})`)
     .join('; ')
-  const conditions = (pt.conditions || []).join(', ')
   const doctorName = pt.careTeam?.[0]?.name || 'their doctor'
   const goals = (pt.goals || []).slice(0, 3).join('; ')
 
   return [
-    `[PATIENT CONTEXT — You are a friendly health education assistant helping ${pt.name} understand their care plan.`,
+    `[PATIENT CONTEXT — You are a friendly, warm Health Buddy talking to a CHILD named ${firstName}, age ${pt.age}.`,
+    `IMPORTANT: Use very simple words that a ${pt.age}-year-old can understand. Short sentences. Be fun, encouraging, and gentle.`,
+    `IMPORTANT: Always call the child "${firstName}" — NEVER use their last name.`,
     `Their doctor is ${doctorName}.`,
-    `Patient: ${pt.name}, ${pt.age}yo ${pt.sex}.`,
+    `Patient: ${firstName}, age ${pt.age}, ${pt.sex}.`,
     `Diagnosis: ${pt.diagnosis}.`,
-    conditions ? `Comorbidities: ${conditions}.` : null,
-    meds ? `Doctor-prescribed medications: ${meds}.` : null,
+    meds ? `Medicines the doctor gave them: ${meds}.` : null,
     pt.allergies?.length ? `Allergies: ${pt.allergies.join(', ')}.` : null,
-    goals ? `Health goals set by their doctor: ${goals}.` : null,
-    `You are NOT the doctor. NEVER say "I prescribed" or "I diagnosed". Always refer to "${doctorName}" or "your doctor" when discussing prescriptions and diagnoses. Help the patient understand what their doctor has recommended. Be warm, specific, and personalized.]`,
+    goals ? `Goals: ${goals}.` : null,
+    `You are NOT the doctor. NEVER say "I prescribed." Always say "${doctorName}" or "your doctor." Use words like "awesome," "super," "you're so brave!" Be warm, fun, and encouraging. Avoid scary medical terms. If the child seems confused, simplify even more.]`,
   ].filter(Boolean).join(' ')
 }
 
@@ -130,7 +131,7 @@ export default function LiveAvatar({ patient }) {
 
   // ── Avatar selection state ───────────────────────────
   const [avatars, setAvatars] = useState(AVATAR_PRESETS)
-  const [selectedAvatarId, setSelectedAvatarId] = useState(AVATAR_PRESETS[0].id)
+  const [selectedAvatarId, setSelectedAvatarId] = useState(AVATAR_PRESETS.find(a => a.id)?.id || null)
   const [selectedQuality, setSelectedQuality] = useState('high')
   const [selectedLanguage, setSelectedLanguage] = useState('en')
   const [showAllAvatars, setShowAllAvatars] = useState(false)
@@ -145,11 +146,17 @@ export default function LiveAvatar({ patient }) {
         const res = await fetch('/api/liveavatar/avatars')
         const data = await res.json()
         const apiAvatars = data?.data?.results || data?.data || []
+        // Log avatar names with "santa" for debugging
+        const santaAvatars = apiAvatars.filter((a) => a.name?.toLowerCase().includes('santa'))
+        console.log('[LiveAvatar] Santa avatars from API:', santaAvatars.map((a) => ({ id: a.id, name: a.name })))
         if (!cancelled && apiAvatars.length > 0) {
           // Resolve placeholders in presets
           const resolved = AVATAR_PRESETS.map((preset) => {
             if (preset.id) return preset
-            const match = apiAvatars.find((a) => a.name === preset._lookupName)
+            const match = apiAvatars.find((a) =>
+              a.name === preset._lookupName ||
+              (preset._lookupName && a.name?.toLowerCase().includes(preset._lookupName.toLowerCase()))
+            )
             if (match) {
               return {
                 ...preset,
@@ -451,7 +458,8 @@ export default function LiveAvatar({ patient }) {
           contextSentRef.current = true
           const pt = patient || samplePatient
           const doctorName = pt.careTeam?.[0]?.name || 'your doctor'
-          const introPrompt = `${patientContextPrompt}\n\nGreet ${pt.name} warmly by name. Introduce yourself as their health education guide. Tell them you're here to help them understand what ${doctorName} has planned for their care. Ask how they're doing today. Keep it under 3 sentences.`
+          const childFirstName = (pt.name || 'friend').split(' ')[0]
+          const introPrompt = `${patientContextPrompt}\n\nGreet ${childFirstName} warmly by FIRST NAME ONLY (just "${childFirstName}", never their last name). Introduce yourself as their friendly Health Buddy. Tell them you're here to help them learn about staying healthy — in a super fun way! Ask how they're feeling today. Use simple words. Be cheerful and encouraging. Keep it under 3 short sentences.`
           sendCommand('avatar.speak_response', { text: introPrompt })
           console.log('[LiveAvatar] → Sent initial patient context to LLM')
         }

@@ -3,6 +3,8 @@ import { storage } from '../utils/storage'
 import DayCard from './DayCard'
 import VideoPlayer from './VideoPlayer'
 import { samplePatient } from '../data/patientData'
+import { battleCards } from '../data/quizData'
+import { Trophy, Star } from 'lucide-react'
 
 export default function RecoveryPlan({
   plan,
@@ -16,6 +18,13 @@ export default function RecoveryPlan({
   const refreshedRef = useRef(false)
 
   const completedCount = plan.days.filter(d => d.completed).length
+
+  // Resolve the current patient for emoji/avatar
+  const currentPatient = samplePatient // could be enhanced to use getPatientById
+
+  // Card collection from storage
+  const cardStorageKey = `medflix_cards_${currentPatient?.id || 'default'}`
+  const collectedCards = storage.get(cardStorageKey) || []
 
   // On mount, auto-refresh video URLs for any day that has videoId but no videoUrl
   useEffect(() => {
@@ -103,79 +112,70 @@ export default function RecoveryPlan({
     }
   }
 
-  const formatDate = (dateStr) => {
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
-  }
-
   return (
     <div>
-      {/* Plan Header */}
+      {/* Plan Header — "My Health Adventure!" */}
       <div className="mb-10 relative">
-        {/* Decorative geometric shapes */}
-        <div className="absolute -top-4 -right-4 w-20 h-20 bg-medflix-yellow opacity-15 rounded-full"></div>
-        <div className="absolute -top-8 -left-8 w-16 h-16 bg-medflix-blue opacity-15 rotate-45"></div>
-        
+        {/* Decorative shapes */}
+        <div className="absolute -top-4 -right-4 w-20 h-20 bg-yellow-400 opacity-20 rounded-full blur-xl"></div>
+        <div className="absolute -top-8 -left-8 w-16 h-16 bg-pink-400 opacity-20 rotate-45 blur-xl"></div>
+
         <div className="relative bg-white rounded-3xl border-5 border-gray-200 p-8 shadow-2xl">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-4xl font-black text-gray-900 mb-2">My Learning Path!</h2>
+              <h2 className="text-4xl font-black text-gray-900 mb-2">
+                {currentPatient?.emoji || '⭐'} My Health Adventure!
+              </h2>
               <p className="text-xl text-gray-700 font-bold">
-                {plan.totalDays} Awesome Lessons
+                {plan.totalDays} Awesome Episodes
               </p>
             </div>
+
+            {/* Card collection counter */}
             <div className="flex flex-col items-center gap-2">
-              <div className="flex gap-1">
-                {[...Array(plan.totalDays)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-8 h-8 shape-star flex items-center justify-center ${
-                      i < completedCount ? 'bg-yellow-400 border-2 border-yellow-600' : 'bg-gray-200 border-2 border-gray-400'
-                    }`}
-                  >
-                    <span className="text-gray-900 font-bold text-sm">★</span>
-                  </div>
-                ))}
+              <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 border-3 border-yellow-400 rounded-2xl shadow-md">
+                <Trophy className="w-6 h-6 text-yellow-500" />
+                <span className="text-lg font-black text-gray-900">
+                  {collectedCards.length}/{battleCards.length}
+                </span>
+                <span className="text-sm font-bold text-gray-600">Cards</span>
               </div>
-              <span className="text-base font-black text-gray-700">{completedCount} of {plan.totalDays}</span>
             </div>
           </div>
 
-          {/* Patient context card */}
+          {/* Kid patient context */}
           <div className="bg-blue-50 border-4 border-medflix-blue rounded-3xl p-6 mb-6">
             <div className="flex items-start gap-5">
-              <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg ring-4 ring-medflix-blue">
-                <img 
-                  src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop&crop=faces"
-                  alt={patientName || samplePatient.name}
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-20 h-20 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-200 to-purple-200 shadow-lg ring-4 ring-medflix-blue text-5xl">
+                {currentPatient?.avatar || '🧒'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-black text-2xl text-gray-900">{patientName || samplePatient.name}</p>
+                <p className="font-black text-2xl text-gray-900">
+                  {patientName || currentPatient?.name}
+                </p>
                 <p className="text-lg text-gray-700 mt-1 font-bold">
-                  Age {samplePatient.age} • {patientDiagnosis || samplePatient.diagnosis}
+                  Age {currentPatient?.age} {currentPatient?.emoji || ''} • {patientDiagnosis || currentPatient?.diagnosis}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-4">
-                  {samplePatient.medications.map((med, idx) => {
+                  {(currentPatient?.medications || []).map((med, idx) => {
                     const pillStyles = [
-                      'bg-red-600 text-gray-900 border-2 border-red-800',
-                      'bg-blue-600 text-gray-900 border-2 border-blue-800', 
-                      'bg-yellow-500 text-gray-900 border-2 border-yellow-700',
-                      'bg-purple-600 text-gray-900 border-2 border-purple-800'
-                    ];
+                      'bg-red-500 text-white border-2 border-red-700',
+                      'bg-blue-500 text-white border-2 border-blue-700',
+                      'bg-green-500 text-white border-2 border-green-700',
+                      'bg-purple-500 text-white border-2 border-purple-700',
+                    ]
                     return (
                       <span key={med.name} className={`text-sm ${pillStyles[idx % 4]} px-4 py-2 rounded-full font-bold shadow-md`}>
-                        {med.name} {med.dose}
+                        {med.name}
                       </span>
-                    );
+                    )
                   })}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Progress Bar */}
+          {/* Star Progress */}
           <div className="bg-gray-100 rounded-2xl p-6 border-4 border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <span className="text-xl font-black text-gray-900">Progress</span>
@@ -183,16 +183,25 @@ export default function RecoveryPlan({
                 {Math.round((completedCount / plan.totalDays) * 100)}%
               </span>
             </div>
-            <div className="bg-white rounded-full h-8 shadow-inner border-3 border-gray-300 overflow-hidden">
-              <div
-                className="bg-medflix-purple h-full rounded-full transition-all duration-500 flex items-center justify-center border-2 border-purple-700"
-                style={{ width: `${(completedCount / plan.totalDays) * 100}%` }}
-              >
-                <span className="text-gray-900 font-black text-sm">
-                  {completedCount > 0 && `${completedCount} ★`}
-                </span>
-              </div>
+            <div className="flex gap-1 mb-3">
+              {[...Array(plan.totalDays)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`flex-1 h-8 rounded-lg flex items-center justify-center transition-all ${
+                    i < completedCount
+                      ? 'bg-yellow-400 border-2 border-yellow-600 shadow-md'
+                      : 'bg-gray-200 border-2 border-gray-300'
+                  }`}
+                >
+                  <Star
+                    className={`w-4 h-4 ${i < completedCount ? 'text-yellow-700 fill-yellow-600' : 'text-gray-400'}`}
+                  />
+                </div>
+              ))}
             </div>
+            <p className="text-center text-base font-black text-gray-700">
+              {completedCount} of {plan.totalDays} episodes complete!
+            </p>
           </div>
         </div>
       </div>
@@ -206,6 +215,8 @@ export default function RecoveryPlan({
             dayIndex={index}
             onComplete={() => handleCompleteDay(index)}
             onWatchVideo={() => handleWatchVideo(index)}
+            diagnosis={patientDiagnosis || currentPatient?.diagnosis}
+            patientId={currentPatient?.id}
           />
         ))}
       </div>

@@ -17,35 +17,39 @@ export default function AIAssistant({ patientName, diagnosis }) {
 
   const getAIResponse = (userMessage) => {
     const msg = userMessage.toLowerCase()
+    const name = patientName?.split(' ')[0] || 'friend'
     if (msg.includes('medication') || msg.includes('medicine') || msg.includes('drug') || msg.includes('pill')) {
       return aiResponses.medications
     }
-    if (msg.includes('pain') || msg.includes('hurt') || msg.includes('ache') || msg.includes('discomfort')) {
+    if (msg.includes('pain') || msg.includes('hurt') || msg.includes('ache') || msg.includes('owie') || msg.includes('ow')) {
       return aiResponses.pain
     }
-    if (msg.includes('warning') || msg.includes('emergency') || msg.includes('danger') || msg.includes('symptom') || msg.includes('sign')) {
+    if (msg.includes('warning') || msg.includes('emergency') || msg.includes('danger') || msg.includes('uh oh') || msg.includes('scary')) {
       return aiResponses.warning
     }
-    if (msg.includes('exercise') || msg.includes('activity') || msg.includes('walk') || msg.includes('stretch') || msg.includes('move')) {
+    if (msg.includes('exercise') || msg.includes('play') || msg.includes('run') || msg.includes('jump') || msg.includes('move')) {
       return aiResponses.exercise
     }
-    if (msg.includes('diet') || msg.includes('food') || msg.includes('eat') || msg.includes('nutrition') || msg.includes('meal')) {
+    if (msg.includes('food') || msg.includes('eat') || msg.includes('snack') || msg.includes('yummy') || msg.includes('fruit') || msg.includes('veggie')) {
       return aiResponses.diet
     }
-    if (msg.includes('day 1') || msg.includes('day one') || msg.includes('first day')) {
-      return `Day 1 of your recovery plan focuses on understanding your diagnosis. This is your foundation — take time to review your condition with your care team, understand all treatment options, and write down any questions you have. Don't hesitate to ask for clarification on anything you're unsure about.`
+    if (msg.includes('episode 1') || msg.includes('first')) {
+      return `Episode 1 is your welcome episode! That's where you meet your Health Buddy and learn what the show is all about. It's the beginning of your awesome health adventure, ${name}! 🌟`
     }
-    if (msg.includes('day 2') || msg.includes('day two') || msg.includes('second day')) {
-      return `Day 2 focuses on home care management. You'll learn about managing medications at home, setting up a comfortable recovery space, and recognizing warning signs that need attention. This is also a good time to organize your medications and set reminders.`
+    if (msg.includes('episode 2') || msg.includes('second') || msg.includes('what\'s happening')) {
+      return `Episode 2 teaches you about what's happening with your body! Don't worry — it's explained in a fun, easy way. And remember, LOTS of kids go through the same thing! You're not alone, ${name}! 💪`
     }
-    if (msg.includes('day 3') || msg.includes('day three') || msg.includes('third day')) {
-      return `Day 3 introduces increased activity. You'll start with gentle movements and gradually build up. The key is to listen to your body — some discomfort is normal, but sharp pain means you should stop and rest. Track your activity levels and how you feel afterward.`
+    if (msg.includes('episode 3') || msg.includes('third') || msg.includes('super medicine')) {
+      return `Episode 3 is all about your Super Medicine! Each medicine is like a superpower that helps your body. A grown-up always helps you take it, and your doctor picked them just for you, ${name}! 🛡️`
     }
     if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
-      return `Hello ${patientName}! I'm glad you're here. How are you feeling today? I can help you with questions about your ${diagnosis || 'recovery'} plan, medications, exercises, nutrition, or any concerns you might have.`
+      return `Hey ${name}! 😄 I'm SO happy you're here! I'm your Health Buddy and I know lots about ${diagnosis || 'staying healthy'}! What do you want to know? You can ask me ANYTHING!`
     }
     if (msg.includes('thank')) {
-      return `You're welcome, ${patientName}! Remember, your recovery is a journey, and every question you ask shows you're taking an active role in your health. I'm here whenever you need me. Keep up the great work!`
+      return `You're welcome, ${name}! 🤗 You're doing such an amazing job learning about your health. Every question you ask makes you even MORE of a Health Hero! I'm always here if you want to chat! ⭐`
+    }
+    if (msg.includes('scared') || msg.includes('afraid') || msg.includes('worry')) {
+      return `It's totally okay to feel a little scared sometimes, ${name}. 🤗 You know what? Being brave doesn't mean you're never scared — it means you keep going even when you feel a little worried! And guess what? Your doctor, your family, and your Health Buddy (that's me!) are ALL here for you. You're NOT alone! 💛`
     }
     return aiResponses.default
   }
@@ -77,11 +81,11 @@ export default function AIAssistant({ patientName, diagnosis }) {
   }
 
   const quickActions = [
-    'What are my medications for?',
-    'How do I manage pain?',
-    'What warning signs should I watch for?',
-    'What exercises can I do?',
-    'What should I eat?',
+    'What does my medicine do?',
+    'Something hurts — what do I do?',
+    'What are Uh Oh Moments?',
+    'Can I still play and have fun?',
+    'What yummy foods can I eat?',
   ]
 
   return (

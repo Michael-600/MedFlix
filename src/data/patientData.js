@@ -1,291 +1,237 @@
 /**
- * Patient Database
+ * Patient Database — Children's Edition
  *
- * Three fully detailed patient profiles for the MedFlix demo.
- * Each patient has a different condition, medications, care team, and goals.
- * During the hackathon demo, the doctor creates content for each patient live.
+ * Three kid patient profiles for the MedFlix demo.
+ * Ages 3-9, common childhood conditions.
+ * Doctors create content for each child live during the demo.
  */
 
 // ═══════════════════════════════════════════════════════
-//  PATIENT 1: Marcus Thompson — Type 2 Diabetes
+//  PATIENT 1: Lily Chen — Asthma (age 4)
 // ═══════════════════════════════════════════════════════
 
-const marcusThompson = {
+const lilyChen = {
   id: 'pt-001',
-  name: 'Marcus Thompson',
-  age: 54,
-  sex: 'Male',
-  avatar: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop&crop=faces',
-  diagnosis: 'Type 2 Diabetes Mellitus',
-  diagnosisCode: 'E11.9',
-  diagnosisDate: '2026-01-15',
-  procedure: 'Lifestyle modification + Metformin initiation',
-  allergies: ['Penicillin', 'Sulfa drugs'],
+  name: 'Lily Chen',
+  age: 4,
+  sex: 'Female',
+  emoji: '🌸',
+  avatar: '🧒🏻',
+  diagnosis: 'Childhood Asthma',
+  diagnosisCode: 'J45.20',
+  diagnosisDate: '2026-01-10',
+  procedure: 'Asthma action plan + daily controller medication',
+  allergies: ['Dust mites', 'Pollen', 'Cat dander'],
   medications: [
     {
-      name: 'Metformin',
-      genericName: 'metformin hydrochloride',
-      dose: '500mg',
+      name: 'Albuterol Inhaler',
+      genericName: 'albuterol sulfate',
+      dose: '2 puffs',
+      frequency: 'as needed (rescue)',
+      route: 'inhaler with spacer',
+      purpose: 'Quick relief when breathing is hard',
+      instructions: 'Use with spacer and mask. Shake well. 2 puffs when coughing or wheezing.',
+    },
+    {
+      name: 'Flovent',
+      genericName: 'fluticasone propionate',
+      dose: '44mcg, 1 puff',
       frequency: 'twice daily',
-      route: 'oral',
-      purpose: 'Blood sugar control',
-      instructions: 'Take with meals to reduce stomach upset',
-    },
-    {
-      name: 'Lisinopril',
-      genericName: 'lisinopril',
-      dose: '10mg',
-      frequency: 'once daily',
-      route: 'oral',
-      purpose: 'Blood pressure management',
-      instructions: 'Take in the morning; report persistent cough',
-    },
-    {
-      name: 'Atorvastatin',
-      genericName: 'atorvastatin calcium',
-      dose: '20mg',
-      frequency: 'once daily',
-      route: 'oral',
-      purpose: 'Cholesterol reduction',
-      instructions: 'Take in the evening; avoid grapefruit',
+      route: 'inhaler with spacer',
+      purpose: 'Daily controller to prevent asthma flare-ups',
+      instructions: 'Use every morning and bedtime with spacer. Rinse mouth after.',
     },
   ],
   vitals: {
-    bloodPressure: '138/86 mmHg',
-    fastingGlucose: '210 mg/dL',
-    hba1c: '8.2%',
-    bmi: 31.4,
-    weight: '218 lbs',
-    height: '5\'10"',
-    heartRate: '78 bpm',
+    weight: '35 lbs',
+    height: '3\'4"',
+    heartRate: '100 bpm',
+    oxygenSaturation: '98%',
+    peakFlow: '120 L/min',
   },
-  conditions: ['Hypertension', 'Hyperlipidemia', 'Obesity'],
+  conditions: ['Allergic rhinitis', 'Eczema'],
   lifestyle: {
-    smokingStatus: 'Former smoker (quit 2019)',
-    alcoholUse: 'Social (1-2 drinks/week)',
-    exerciseLevel: 'Sedentary',
-    diet: 'Standard American diet, high carbohydrate',
+    school: 'Sunshine Preschool',
+    activities: 'Dancing, playing with dolls, painting',
+    sleepHours: '11 hours/night',
+    diet: 'Picky eater, loves pasta and fruit',
   },
   careTeam: [
-    { name: 'Dr. Sarah Chen', role: 'Primary Care Physician', specialty: 'Internal Medicine' },
-    { name: 'Maria Lopez, RN', role: 'Care Coordinator', specialty: 'Diabetes Education' },
-    { name: 'James Park, PharmD', role: 'Clinical Pharmacist', specialty: 'Medication Management' },
+    { name: 'Dr. Maya Patel', role: 'Pediatrician', specialty: 'General Pediatrics' },
+    { name: 'Dr. Kevin Okafor', role: 'Pediatric Pulmonologist', specialty: 'Asthma & Allergies' },
+    { name: 'Nurse Jenny', role: 'School Nurse', specialty: 'Asthma Management' },
   ],
   emergencyContact: {
-    name: 'Linda Thompson',
-    relation: 'Spouse',
-    phone: '(555) 234-5678',
+    name: 'Wei Chen',
+    relation: 'Mom',
+    phone: '(555) 123-4567',
+  },
+  insurance: {
+    provider: 'United Healthcare',
+    planType: 'PPO',
+    memberId: 'UHC-3347891',
+  },
+  goals: [
+    'Learn to use inhaler with spacer and grown-up help',
+    'Know when to tell a grown-up breathing is hard',
+    'Take daily puffs every morning and bedtime',
+    'Stay active and play without being scared of asthma',
+  ],
+}
+
+// ═══════════════════════════════════════════════════════
+//  PATIENT 2: Noah Martinez — Ear Infection (age 6)
+// ═══════════════════════════════════════════════════════
+
+const noahMartinez = {
+  id: 'pt-002',
+  name: 'Noah Martinez',
+  age: 6,
+  sex: 'Male',
+  emoji: '⚡',
+  avatar: '👦🏽',
+  diagnosis: 'Acute Otitis Media (Ear Infection)',
+  diagnosisCode: 'H66.90',
+  diagnosisDate: '2026-02-05',
+  procedure: 'Antibiotic therapy + symptom management',
+  allergies: ['None known'],
+  medications: [
+    {
+      name: 'Amoxicillin',
+      genericName: 'amoxicillin',
+      dose: '250mg/5mL',
+      frequency: 'twice daily for 10 days',
+      route: 'oral liquid',
+      purpose: 'Fights the germs causing the ear infection',
+      instructions: 'Take the pink medicine with food. Finish ALL of it even if ears feel better!',
+    },
+    {
+      name: "Children's Tylenol",
+      genericName: 'acetaminophen',
+      dose: '160mg/5mL',
+      frequency: 'every 4-6 hours as needed',
+      route: 'oral liquid',
+      purpose: 'Helps with ear pain and fever',
+      instructions: 'Give when ears hurt or fever is above 100.4°F. Do not give more than 5 doses in 24 hours.',
+    },
+  ],
+  vitals: {
+    weight: '48 lbs',
+    height: '3\'10"',
+    temperature: '100.8°F',
+    heartRate: '95 bpm',
+    oxygenSaturation: '99%',
+  },
+  conditions: ['Recurrent ear infections (3rd episode)'],
+  lifestyle: {
+    school: 'Lincoln Elementary, 1st Grade',
+    activities: 'Soccer, building with LEGOs, dinosaurs',
+    sleepHours: '10 hours/night',
+    diet: 'Good eater, loves chicken nuggets and grapes',
+  },
+  careTeam: [
+    { name: 'Dr. Maya Patel', role: 'Pediatrician', specialty: 'General Pediatrics' },
+    { name: 'Dr. Samira Hassan', role: 'ENT Specialist', specialty: 'Pediatric Ear/Nose/Throat' },
+    { name: 'Maria Lopez, RN', role: 'Nurse', specialty: 'Pediatric Care' },
+  ],
+  emergencyContact: {
+    name: 'Carlos Martinez',
+    relation: 'Dad',
+    phone: '(555) 987-6543',
+  },
+  insurance: {
+    provider: 'Cigna',
+    planType: 'HMO',
+    memberId: 'CIG-5521934',
+  },
+  goals: [
+    'Take ALL the pink medicine for 10 days — even when feeling better',
+    'Learn that medicine makes the ear germs go away',
+    'Know to tell a grown-up when ears hurt more',
+    'Stay cozy and rest while getting better',
+  ],
+}
+
+// ═══════════════════════════════════════════════════════
+//  PATIENT 3: Zara Thompson — Childhood Cancer (age 10)
+// ═══════════════════════════════════════════════════════
+
+const zaraThompson = {
+  id: 'pt-003',
+  name: 'Zara Thompson',
+  age: 10,
+  sex: 'Female',
+  emoji: '🦋',
+  avatar: '👧🏾',
+  diagnosis: 'Acute Lymphoblastic Leukemia (ALL)',
+  diagnosisCode: 'C91.0',
+  diagnosisDate: '2026-01-20',
+  procedure: 'Chemotherapy treatment plan (Induction phase)',
+  allergies: ['Sulfa drugs'],
+  medications: [
+    {
+      name: 'Vincristine',
+      genericName: 'vincristine sulfate',
+      dose: '1.5mg/m²',
+      frequency: 'once weekly (IV at clinic)',
+      route: 'intravenous',
+      purpose: 'Chemo medicine that fights the bad cells in your blood',
+      instructions: 'Given at the hospital by the nurse. You might feel a little tired after — that is totally normal!',
+    },
+    {
+      name: 'Prednisone',
+      genericName: 'prednisone',
+      dose: '40mg/m²',
+      frequency: 'daily for 28 days',
+      route: 'oral tablet',
+      purpose: 'Helps your body fight the bad cells and reduces swelling',
+      instructions: 'Take with food every morning. It might make you extra hungry and a little moody — that is the medicine working!',
+    },
+    {
+      name: 'Ondansetron',
+      genericName: 'ondansetron',
+      dose: '4mg',
+      frequency: 'as needed before/after chemo',
+      route: 'oral dissolving tablet',
+      purpose: 'Stops your tummy from feeling sick after treatment',
+      instructions: 'Put the tablet on your tongue — it dissolves like magic! Take it before chemo and whenever your tummy feels yucky.',
+    },
+  ],
+  vitals: {
+    weight: '65 lbs',
+    height: '4\'6"',
+    heartRate: '90 bpm',
+    oxygenSaturation: '98%',
+    whiteBloodCellCount: '2,500/μL (low — being monitored)',
+  },
+  conditions: ['Neutropenia (low white blood cells)', 'Fatigue', 'Mild anemia'],
+  lifestyle: {
+    school: 'Oakwood Elementary, 5th Grade (attending virtually during treatment)',
+    activities: 'Drawing, reading Harry Potter, video calls with friends, gentle walks',
+    sleepHours: '10-11 hours/night (needs extra rest)',
+    diet: 'High-protein foods to stay strong. Loves pasta, smoothies, and grilled cheese.',
+  },
+  careTeam: [
+    { name: 'Dr. Maya Patel', role: 'Pediatrician', specialty: 'General Pediatrics' },
+    { name: 'Dr. James Okonkwo', role: 'Pediatric Oncologist', specialty: 'Childhood Leukemia' },
+    { name: 'Nurse Tanya', role: 'Oncology Nurse', specialty: 'Pediatric Chemo Administration' },
+    { name: 'Ms. Sarah, CCLS', role: 'Child Life Specialist', specialty: 'Emotional Support & Play Therapy' },
+  ],
+  emergencyContact: {
+    name: 'Keisha Thompson',
+    relation: 'Mom',
+    phone: '(555) 456-7890',
   },
   insurance: {
     provider: 'Blue Cross Blue Shield',
     planType: 'PPO',
-    memberId: 'BCB-9948271',
+    memberId: 'BCB-8834521',
   },
   goals: [
-    'Reduce HbA1c to below 7.0% within 6 months',
-    'Lose 15 lbs through diet and exercise',
-    'Establish consistent daily walking routine (30 min/day)',
-    'Master blood glucose self-monitoring',
-    'Understand medication regimen and adherence',
-  ],
-}
-
-// ═══════════════════════════════════════════════════════
-//  PATIENT 2: Sarah Williams — Post-Knee Replacement
-// ═══════════════════════════════════════════════════════
-
-const sarahWilliams = {
-  id: 'pt-002',
-  name: 'Sarah Williams',
-  age: 67,
-  sex: 'Female',
-  avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=150&h=150&fit=crop&crop=faces',
-  diagnosis: 'Post Total Knee Arthroplasty (Right Knee)',
-  diagnosisCode: 'Z96.651',
-  diagnosisDate: '2026-02-01',
-  procedure: 'Right total knee replacement + post-operative rehabilitation',
-  allergies: ['Codeine', 'Latex'],
-  medications: [
-    {
-      name: 'Celecoxib',
-      genericName: 'celecoxib',
-      dose: '200mg',
-      frequency: 'twice daily',
-      route: 'oral',
-      purpose: 'Anti-inflammatory pain relief',
-      instructions: 'Take with food; stop if stomach pain or black stools occur',
-    },
-    {
-      name: 'Acetaminophen',
-      genericName: 'acetaminophen',
-      dose: '1000mg',
-      frequency: 'every 6 hours as needed',
-      route: 'oral',
-      purpose: 'Pain management',
-      instructions: 'Do not exceed 3000mg/day; avoid with alcohol',
-    },
-    {
-      name: 'Enoxaparin',
-      genericName: 'enoxaparin sodium',
-      dose: '40mg',
-      frequency: 'once daily',
-      route: 'subcutaneous injection',
-      purpose: 'Blood clot prevention',
-      instructions: 'Inject into abdomen; rotate injection sites; for 14 days post-surgery',
-    },
-    {
-      name: 'Amlodipine',
-      genericName: 'amlodipine besylate',
-      dose: '5mg',
-      frequency: 'once daily',
-      route: 'oral',
-      purpose: 'Blood pressure control',
-      instructions: 'Take at the same time each day; report ankle swelling',
-    },
-  ],
-  vitals: {
-    bloodPressure: '142/88 mmHg',
-    heartRate: '72 bpm',
-    bmi: 28.6,
-    weight: '168 lbs',
-    height: '5\'5"',
-    temperature: '98.4°F',
-    oxygenSaturation: '97%',
-  },
-  conditions: ['Osteoarthritis', 'Hypertension', 'Osteoporosis'],
-  lifestyle: {
-    smokingStatus: 'Never smoker',
-    alcoholUse: 'Occasional (wine with dinner)',
-    exerciseLevel: 'Limited due to knee pain (pre-surgery)',
-    diet: 'Mediterranean-style, calcium-rich',
-  },
-  careTeam: [
-    { name: 'Dr. Michael Torres', role: 'Orthopedic Surgeon', specialty: 'Joint Replacement' },
-    { name: 'Dr. Sarah Chen', role: 'Primary Care Physician', specialty: 'Internal Medicine' },
-    { name: 'Karen White, PT', role: 'Physical Therapist', specialty: 'Post-Surgical Rehabilitation' },
-    { name: 'James Park, PharmD', role: 'Clinical Pharmacist', specialty: 'Pain Management' },
-  ],
-  emergencyContact: {
-    name: 'Robert Williams',
-    relation: 'Husband',
-    phone: '(555) 876-5432',
-  },
-  insurance: {
-    provider: 'Medicare Advantage',
-    planType: 'HMO',
-    memberId: 'MA-4421876',
-  },
-  goals: [
-    'Walk independently without a walker within 4 weeks',
-    'Achieve 120 degrees knee flexion within 6 weeks',
-    'Return to gardening and light activities within 8 weeks',
-    'Complete all physical therapy sessions (3x/week for 6 weeks)',
-    'Manage pain effectively with minimal narcotic use',
-  ],
-}
-
-// ═══════════════════════════════════════════════════════
-//  PATIENT 3: James Rivera — Chronic Heart Failure
-// ═══════════════════════════════════════════════════════
-
-const jamesRivera = {
-  id: 'pt-003',
-  name: 'James Rivera',
-  age: 45,
-  sex: 'Male',
-  avatar: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=150&h=150&fit=crop&crop=faces',
-  diagnosis: 'Heart Failure with Reduced Ejection Fraction (HFrEF), NYHA Class II',
-  diagnosisCode: 'I50.20',
-  diagnosisDate: '2025-11-20',
-  procedure: 'Guideline-directed medical therapy + cardiac rehabilitation',
-  allergies: ['ACE inhibitors (cough)', 'Shellfish'],
-  medications: [
-    {
-      name: 'Sacubitril/Valsartan',
-      genericName: 'sacubitril/valsartan',
-      dose: '49/51mg',
-      frequency: 'twice daily',
-      route: 'oral',
-      purpose: 'Heart failure management (ARNI)',
-      instructions: 'Take with or without food; do not use with ACE inhibitors; report dizziness',
-    },
-    {
-      name: 'Carvedilol',
-      genericName: 'carvedilol',
-      dose: '12.5mg',
-      frequency: 'twice daily',
-      route: 'oral',
-      purpose: 'Heart rate and blood pressure control (beta-blocker)',
-      instructions: 'Take with food; do not stop abruptly; report excessive fatigue or wheezing',
-    },
-    {
-      name: 'Spironolactone',
-      genericName: 'spironolactone',
-      dose: '25mg',
-      frequency: 'once daily',
-      route: 'oral',
-      purpose: 'Reduce fluid retention and cardiac remodeling',
-      instructions: 'Monitor potassium levels; report muscle weakness or irregular heartbeat',
-    },
-    {
-      name: 'Furosemide',
-      genericName: 'furosemide',
-      dose: '40mg',
-      frequency: 'once daily (morning)',
-      route: 'oral',
-      purpose: 'Diuretic for fluid management',
-      instructions: 'Take in the morning to avoid nighttime urination; weigh yourself daily',
-    },
-    {
-      name: 'Dapagliflozin',
-      genericName: 'dapagliflozin',
-      dose: '10mg',
-      frequency: 'once daily',
-      route: 'oral',
-      purpose: 'Heart failure outcomes improvement (SGLT2 inhibitor)',
-      instructions: 'Stay hydrated; report signs of urinary tract infection',
-    },
-  ],
-  vitals: {
-    bloodPressure: '118/72 mmHg',
-    heartRate: '68 bpm',
-    ejectionFraction: '32%',
-    bmi: 26.8,
-    weight: '185 lbs',
-    height: '5\'11"',
-    bnp: '450 pg/mL',
-    oxygenSaturation: '95%',
-  },
-  conditions: ['Dilated Cardiomyopathy', 'Atrial Fibrillation', 'Mild Renal Impairment'],
-  lifestyle: {
-    smokingStatus: 'Never smoker',
-    alcoholUse: 'None (advised to abstain)',
-    exerciseLevel: 'Light activity (cardiac rehab 2x/week)',
-    diet: 'Low-sodium (<2000mg/day), fluid-restricted (2L/day)',
-  },
-  careTeam: [
-    { name: 'Dr. Anika Patel', role: 'Cardiologist', specialty: 'Heart Failure & Transplant' },
-    { name: 'Dr. Sarah Chen', role: 'Primary Care Physician', specialty: 'Internal Medicine' },
-    { name: 'Lisa Nguyen, RN', role: 'Heart Failure Nurse Specialist', specialty: 'Cardiac Care Coordination' },
-    { name: 'James Park, PharmD', role: 'Clinical Pharmacist', specialty: 'Cardiovascular Pharmacotherapy' },
-    { name: 'David Kim, RD', role: 'Registered Dietitian', specialty: 'Cardiac Nutrition' },
-  ],
-  emergencyContact: {
-    name: 'Maria Rivera',
-    relation: 'Wife',
-    phone: '(555) 345-6789',
-  },
-  insurance: {
-    provider: 'Aetna',
-    planType: 'PPO',
-    memberId: 'AET-7738421',
-  },
-  goals: [
-    'Maintain daily weight within 2 lbs of dry weight (183 lbs)',
-    'Adhere to sodium restriction (<2000mg/day)',
-    'Complete cardiac rehabilitation program (12 weeks)',
-    'Improve ejection fraction to above 35% within 6 months',
-    'Recognize and respond to worsening heart failure symptoms within 24 hours',
+    'Understand what leukemia is and why treatment helps — in a way that is not scary',
+    'Know that chemo is fighting the bad cells and that feeling tired is normal',
+    'Learn when to tell a grown-up if something feels wrong (fever, bruising, bleeding)',
+    'Stay brave and positive — YOU are stronger than you think!',
   ],
 }
 
@@ -294,10 +240,10 @@ const jamesRivera = {
 // ═══════════════════════════════════════════════════════
 
 /** All patients in the database */
-export const allPatients = [marcusThompson, sarahWilliams, jamesRivera]
+export const allPatients = [lilyChen, noahMartinez, zaraThompson]
 
 /** Default / first patient (backward compat) */
-export const samplePatient = marcusThompson
+export const samplePatient = lilyChen
 
 /** Look up a patient by ID */
 export function getPatientById(id) {
@@ -306,7 +252,6 @@ export function getPatientById(id) {
 
 /**
  * Compact patient summary for API calls and prompt building.
- * Strips sensitive fields and keeps only what the AI needs.
  */
 export function getPatientContext(patient = samplePatient) {
   return {
@@ -325,12 +270,7 @@ export function getPatientContext(patient = samplePatient) {
       frequency: m.frequency,
       purpose: m.purpose,
     })),
-    vitals: {
-      hba1c: patient.vitals?.hba1c,
-      bmi: patient.vitals?.bmi,
-      bloodPressure: patient.vitals?.bloodPressure,
-      ejectionFraction: patient.vitals?.ejectionFraction,
-    },
+    vitals: patient.vitals || {},
     goals: patient.goals,
     careTeam: (patient.careTeam || []).map((c) => ({ name: c.name, role: c.role })),
   }

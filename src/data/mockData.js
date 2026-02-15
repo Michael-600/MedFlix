@@ -6,7 +6,7 @@ export const visualStyles = [
     description: 'Live-action sitcom aesthetic. Warm, bright color palette with cozy interior lighting from practical lamps and natural windows. Soft, even lighting reminiscent of multi-camera TV setup. Natural skin tones, realistic human features and expressions, conversational body language. Modern 90s-2000s style with contemporary casual wardrobe. Ambient: light background chatter, everyday room tone. Shot on film with slight warmth. No harsh shadows, no cold tones.',
     color: '#9333ea',
     icon: 'Video',
-    image: null, // Add your licensed image path here (e.g., '/images/styles/friends.jpg')
+    image: null,
     emoji: '🎬',
   },
   {
@@ -16,7 +16,7 @@ export const visualStyles = [
     description: 'Disney 3D animation style with vibrant, saturated colors and smooth character models. Expressive anthropomorphic characters with detailed fur/skin textures. Bright, optimistic lighting with soft shadows. Clean environments with rich detail. Cinematic camera angles with depth of field effects.',
     color: '#3b82f6',
     icon: 'Sparkles',
-    image: null, // Add your licensed image path here
+    image: null,
     emoji: '🦊',
   },
   {
@@ -26,7 +26,7 @@ export const visualStyles = [
     description: 'Japanese anime aesthetic with clean line art and cel-shaded coloring. Expressive character designs with large, detailed eyes. Dynamic action poses and emotional expressions. Soft gradients and atmospheric lighting. Cherry blossom and nature motifs for medical settings.',
     color: '#ec4899',
     icon: 'Palette',
-    image: null, // Add your licensed image path here
+    image: null,
     emoji: '🎨',
   },
   {
@@ -36,7 +36,7 @@ export const visualStyles = [
     description: 'Mockumentary style with handheld camera feel and natural office lighting. Documentary-style talking head interviews. Realistic settings with fluorescent office lighting. Deadpan humor delivery with direct-to-camera moments. Casual, everyday wardrobe and relatable environments.',
     color: '#f59e0b',
     icon: 'Camera',
-    image: null, // Add your licensed image path here
+    image: null,
     emoji: '📷',
   },
   {
@@ -46,7 +46,7 @@ export const visualStyles = [
     description: 'Pixar-quality 3D animation with incredible attention to detail in textures and lighting. Heartwarming character designs with exaggerated proportions. Rich, cinematic color grading with volumetric lighting. Emotionally resonant storytelling through visual cues.',
     color: '#8b5cf6',
     icon: 'Film',
-    image: null, // Add your licensed image path here
+    image: null,
     emoji: '💡',
   },
   {
@@ -56,7 +56,7 @@ export const visualStyles = [
     description: 'Bold comic book animation with halftone dots, Ben-Day dots, and thick ink outlines. Dynamic panel compositions and split-screen storytelling. Vibrant pop art colors with dramatic contrast. Kinetic energy in every frame with motion blur effects.',
     color: '#ef4444',
     icon: 'Zap',
-    image: null, // Add your licensed image path here
+    image: null,
     emoji: '⚡',
   },
   {
@@ -66,7 +66,7 @@ export const visualStyles = [
     description: 'Simple cutout animation with flat geometric shapes and bold outlines. Minimalist character designs with exaggerated expressions. Bright, primary color palette. Paper-craft aesthetic with simple backgrounds. Direct, blunt delivery style.',
     color: '#f97316',
     icon: 'FileText',
-    image: null, // Add your licensed image path here
+    image: null,
     emoji: '✂️',
   },
   {
@@ -83,164 +83,142 @@ export const visualStyles = [
 
 export const defaultRecoveryPlan = {
   patientName: '',
-  diagnosis: 'Type 2 Diabetes Mellitus',
+  diagnosis: 'Childhood Asthma',
   startDate: new Date().toISOString().split('T')[0],
   totalDays: 7,
   days: [
     {
       day: 1,
-      title: 'Welcome & Introduction',
-      description: 'Meet your care team and understand your diagnosis and care plan',
+      title: 'Hi There!',
+      description: 'Meet your Health Buddy and learn what this special show is about!',
       completed: false,
       unlocked: true,
-      checklist: [
-        { id: 'c1-1', text: 'Watch the welcome episode', checked: false },
-        { id: 'c1-2', text: 'Review your diagnosis overview', checked: false },
-        { id: 'c1-3', text: 'Note questions for your care team', checked: false },
+      keyTakeaways: [
+        'This is YOUR special health show!',
+        'Your doctor made it just for you',
+        '7 fun episodes with collector cards!',
       ],
       videoUrl: null,
-      episodeTitle: 'Episode 1: Welcome & Introduction',
+      episodeTitle: 'Episode 1: Hi There!',
     },
     {
       day: 2,
-      title: 'Understanding Your Condition',
-      description: 'Learn what your diagnosis means and how it affects your body',
+      title: "What's Happening?",
+      description: 'Learn about what\'s going on with your body — in a fun, easy way!',
       completed: false,
       unlocked: false,
-      checklist: [
-        { id: 'c2-1', text: 'Watch the condition explainer', checked: false },
-        { id: 'c2-2', text: 'Review key terminology', checked: false },
-        { id: 'c2-3', text: 'Understand your treatment timeline', checked: false },
+      keyTakeaways: [
+        'Your body needs a little extra help right now',
+        'Lots of kids go through this — you are not alone!',
+        'Your doctor has an awesome plan to help',
       ],
       videoUrl: null,
-      episodeTitle: 'Episode 2: Understanding Your Condition',
+      episodeTitle: "Episode 2: What's Happening?",
     },
     {
       day: 3,
-      title: 'Your Medications',
-      description: 'Learn about each medication, dosage, timing, and what to watch for',
+      title: 'Your Super Medicine!',
+      description: 'Each medicine is like a superpower! Learn what they do!',
       completed: false,
       unlocked: false,
-      checklist: [
-        { id: 'c3-1', text: 'Review each medication and its purpose', checked: false },
-        { id: 'c3-2', text: 'Set up medication reminders', checked: false },
-        { id: 'c3-3', text: 'Know potential side effects', checked: false },
+      keyTakeaways: [
+        'Each medicine has a special superpower',
+        'ALWAYS ask a grown-up to help with medicine',
+        'Your doctor picked these just for you',
       ],
       videoUrl: null,
-      episodeTitle: 'Episode 3: Your Medications',
+      episodeTitle: 'Episode 3: Your Super Medicine!',
     },
     {
       day: 4,
-      title: 'What to Expect',
-      description: 'Practical guidance on what to prepare for in the coming weeks',
+      title: 'What Happens Next?',
+      description: 'Find out what to expect — day by day, you will feel better!',
       completed: false,
       unlocked: false,
-      checklist: [
-        { id: 'c4-1', text: 'Review daily monitoring checklist', checked: false },
-        { id: 'c4-2', text: 'Set up glucose monitoring routine', checked: false },
-        { id: 'c4-3', text: 'Prepare home care supplies', checked: false },
+      keyTakeaways: [
+        'Give your body a little time',
+        'Things WILL get better!',
+        'Keep taking your medicine even when you feel good',
       ],
       videoUrl: null,
-      episodeTitle: 'Episode 4: What to Expect',
+      episodeTitle: 'Episode 4: What Happens Next?',
     },
     {
       day: 5,
-      title: 'Lifestyle & Home Care',
-      description: 'Diet, exercise, and daily habits to support your health goals',
+      title: 'Healthy Habits!',
+      description: 'Fun things you can do every day to be your strongest self!',
       completed: false,
       unlocked: false,
-      checklist: [
-        { id: 'c5-1', text: 'Review nutrition guidelines', checked: false },
-        { id: 'c5-2', text: 'Plan a 15-minute daily walk', checked: false },
-        { id: 'c5-3', text: 'Create a healthy meal plan', checked: false },
+      keyTakeaways: [
+        'Healthy food gives you superpowers!',
+        'Being active is awesome for your body',
+        'Sleep is your body\'s superpower time!',
       ],
       videoUrl: null,
-      episodeTitle: 'Episode 5: Lifestyle & Home Care',
+      episodeTitle: 'Episode 5: Healthy Habits!',
     },
     {
       day: 6,
-      title: 'Warning Signs & When to Call',
-      description: 'Know which symptoms need attention and when to contact your care team',
+      title: 'Uh Oh Moments!',
+      description: 'Learn when to tell a grown-up that something doesn\'t feel right!',
       completed: false,
       unlocked: false,
-      checklist: [
-        { id: 'c6-1', text: 'Learn the warning signs', checked: false },
-        { id: 'c6-2', text: 'Save care team contact info', checked: false },
-        { id: 'c6-3', text: 'Know when to seek emergency care', checked: false },
+      keyTakeaways: [
+        'BIG Uh Oh: Tell a grown-up RIGHT AWAY!',
+        'Telling a grown-up is the BRAVEST thing',
+        'You are NEVER in trouble for asking for help',
       ],
       videoUrl: null,
-      episodeTitle: 'Episode 6: Warning Signs & When to Call',
+      episodeTitle: 'Episode 6: Uh Oh Moments!',
     },
     {
       day: 7,
-      title: 'Your Goals & Next Steps',
-      description: 'Review your health goals and plan for continued progress',
+      title: 'You Did It!',
+      description: 'Celebrate! You are a Health Hero! Look at everything you learned!',
       completed: false,
       unlocked: false,
-      checklist: [
-        { id: 'c7-1', text: 'Review your health goals', checked: false },
-        { id: 'c7-2', text: 'Schedule follow-up appointment', checked: false },
-        { id: 'c7-3', text: 'Set personal milestones', checked: false },
+      keyTakeaways: [
+        'You completed ALL 7 episodes!',
+        'You are a certified Health Hero!',
+        'Your care team believes in you!',
       ],
       videoUrl: null,
-      episodeTitle: 'Episode 7: Your Goals & Next Steps',
+      episodeTitle: 'Episode 7: You Did It!',
     },
   ],
 }
 
 export const defaultMedications = {
-  'Type 2 Diabetes': [
-    { name: 'Metformin', dosage: '500mg', frequency: 'twice_daily', times: ['08:00', '20:00'], instructions: 'Take with food' },
-    { name: 'Glipizide', dosage: '5mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Take 30 min before breakfast' },
+  'Childhood Asthma': [
+    { name: 'Albuterol Inhaler', dosage: '2 puffs', frequency: 'as_needed', times: [], instructions: 'Use with spacer when coughing or wheezing' },
+    { name: 'Flovent', dosage: '1 puff', frequency: 'twice_daily', times: ['08:00', '20:00'], instructions: 'Morning and bedtime with spacer. Rinse mouth after.' },
   ],
-  'Breast Cancer - Stage II': [
-    { name: 'Tamoxifen', dosage: '20mg', frequency: 'once_daily', times: ['09:00'], instructions: 'Take at the same time each day' },
-    { name: 'Ondansetron', dosage: '8mg', frequency: 'twice_daily', times: ['08:00', '20:00'], instructions: 'Take 30 min before meals if nauseous' },
+  'Ear Infection': [
+    { name: 'Amoxicillin', dosage: '250mg/5mL', frequency: 'twice_daily', times: ['08:00', '20:00'], instructions: 'Take the pink medicine with food. Finish ALL of it!' },
+    { name: "Children's Tylenol", dosage: '160mg/5mL', frequency: 'as_needed', times: [], instructions: 'Give when ears hurt or fever is above 100.4°F' },
   ],
-  'Knee Replacement Recovery': [
-    { name: 'Acetaminophen', dosage: '500mg', frequency: 'three_times_daily', times: ['08:00', '14:00', '20:00'], instructions: 'Take with water' },
-    { name: 'Enoxaparin', dosage: '40mg', frequency: 'once_daily', times: ['09:00'], instructions: 'Inject subcutaneously as directed' },
-  ],
-  'Cardiac Bypass Recovery': [
-    { name: 'Aspirin', dosage: '81mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Take with food' },
-    { name: 'Metoprolol', dosage: '25mg', frequency: 'twice_daily', times: ['08:00', '20:00'], instructions: 'Do not stop abruptly' },
-    { name: 'Atorvastatin', dosage: '40mg', frequency: 'once_daily', times: ['21:00'], instructions: 'Take at bedtime' },
-  ],
-  'Chronic Back Pain Management': [
-    { name: 'Ibuprofen', dosage: '400mg', frequency: 'three_times_daily', times: ['08:00', '14:00', '20:00'], instructions: 'Take with food' },
-    { name: 'Cyclobenzaprine', dosage: '10mg', frequency: 'once_daily', times: ['21:00'], instructions: 'Take at bedtime, may cause drowsiness' },
-  ],
-  'Post-Stroke Rehabilitation': [
-    { name: 'Clopidogrel', dosage: '75mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Take at the same time each day' },
-    { name: 'Lisinopril', dosage: '10mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Monitor blood pressure regularly' },
-    { name: 'Atorvastatin', dosage: '80mg', frequency: 'once_daily', times: ['21:00'], instructions: 'Take at bedtime' },
+  'Childhood Leukemia': [
+    { name: 'Vincristine', dosage: '1.5mg/m²', frequency: 'weekly', times: ['Hospital visit'], instructions: 'Given at the hospital by the nurse. Rest afterward!' },
+    { name: 'Prednisone', dosage: '40mg/m²', frequency: 'once_daily', times: ['08:00'], instructions: 'Take with breakfast every morning' },
+    { name: 'Ondansetron', dosage: '4mg', frequency: 'as_needed', times: [], instructions: 'Dissolving tablet before/after chemo for tummy sickness' },
   ],
 }
 
-export const sampleDiagnoses = [
-  'Breast Cancer - Stage II',
-  'Type 2 Diabetes',
-  'Knee Replacement Recovery',
-  'Cardiac Bypass Recovery',
-  'Chronic Back Pain Management',
-  'Post-Stroke Rehabilitation',
-]
+export const aiAssistantGreeting = `Hey there, Health Hero! 🌟 I'm your Health Buddy and I'm SO happy you're here!
 
-export const aiAssistantGreeting = `Hello! I'm your MedFlix AI assistant. I'm here to help you understand your recovery plan and answer questions about your treatment. 
+You can ask me stuff like:
+- "What does my medicine do?"
+- "Can I still play and have fun?"
+- "What are Uh Oh Moments?"
+- "What yummy foods can I eat?"
 
-You can ask me things like:
-- "What should I expect on Day 3?"
-- "Explain my medications"
-- "What are the warning signs I should watch for?"
-- "How can I manage pain at home?"
-
-How can I help you today?`
+What do you want to know? I love questions! 🎉`
 
 export const aiResponses = {
-  medications: "Based on your recovery plan, it's important to take all prescribed medications on schedule. Common medications after your procedure may include pain management, anti-inflammatory drugs, and preventive antibiotics. Always take medications with food unless directed otherwise, and never skip doses without consulting your doctor. If you experience side effects like nausea, dizziness, or unusual symptoms, contact your care team immediately.",
-  pain: "Pain management is a crucial part of your recovery. Here are some strategies:\n\n1. **Take medications on schedule** - Don't wait until pain is severe\n2. **Use ice/heat therapy** as recommended by your care team\n3. **Practice deep breathing** and relaxation techniques\n4. **Gentle movement** can help reduce stiffness\n5. **Keep a pain journal** to track patterns\n\nIf pain becomes unmanageable or suddenly worsens, contact your healthcare provider immediately.",
-  warning: "Watch for these warning signs that require immediate medical attention:\n\n- **Fever** above 101°F (38.3°C)\n- **Increased swelling** or redness at the surgical site\n- **Difficulty breathing** or chest pain\n- **Severe or worsening pain** not controlled by medications\n- **Signs of infection**: warmth, drainage, or red streaks\n- **Numbness or tingling** in extremities\n\nWhen in doubt, always err on the side of caution and contact your care team.",
-  exercise: "During your recovery, exercise should be gradual and guided:\n\n**Week 1**: Focus on gentle walking and breathing exercises\n**Week 2**: Add light stretching and range of motion\n**Week 3+**: Gradually increase activity as tolerated\n\nAlways:\n- Start slowly and listen to your body\n- Stop if you feel sharp pain\n- Stay hydrated\n- Follow your physical therapist's guidelines\n- Track your progress",
-  diet: "Good nutrition supports healing. General guidelines:\n\n- **Protein-rich foods** help tissue repair (lean meats, beans, eggs)\n- **Fruits and vegetables** provide essential vitamins\n- **Stay hydrated** - aim for 8 glasses of water daily\n- **Fiber-rich foods** help prevent constipation from medications\n- **Avoid alcohol** while on medications\n- **Small, frequent meals** if appetite is low",
-  default: "That's a great question about your recovery. While I can provide general guidance, please remember to always consult your healthcare team for advice specific to your condition. Your care team has the most complete picture of your health and can give you the most accurate recommendations.\n\nIs there anything specific about your recovery plan I can help clarify?",
+  medications: "Your medicines are like SUPERPOWERS! 🛡️ Each one does something special to help your body. Your doctor picked them just for you! Remember — ALWAYS ask a grown-up when it's time to take medicine. Never take it by yourself. And if something feels funny after taking medicine, tell a grown-up right away!",
+  pain: "Ouch! I'm sorry something hurts! 😟 Here's what to do:\n\n1. **Tell a grown-up** right away — they'll know how to help!\n2. If your doctor gave you pain medicine, a grown-up can help you take it\n3. Try to rest and get comfy\n4. Put a warm blanket on if it helps\n5. Take slow, deep breaths — in through your nose, out through your mouth\n\nRemember — it's ALWAYS brave to tell someone when something hurts! 💪",
+  warning: "These are your **Uh Oh Moments** — times to tell a grown-up RIGHT AWAY! 🚨\n\n- If breathing gets really hard\n- If something hurts WAY more than usual\n- If you feel really dizzy or sick\n- If you get a high fever\n- If you ate something and your body feels funny\n\nTelling a grown-up is the **BRAVEST** thing you can do! You're NEVER in trouble for asking for help! 💛",
+  exercise: "You can ABSOLUTELY still play and have fun! 🎉\n\n- **Running, jumping, dancing** — go for it!\n- If you start feeling tired or funny, take a break\n- **Drink water** when you play hard\n- Tell a grown-up if anything feels wrong\n- Some days you might need to rest more — and that's OKAY!\n\nYour body is amazing and it wants to move! Just listen to it and have FUN! 🏃",
+  diet: "There are SO many yummy foods for you! 🍎\n\n- **Fruits** — strawberries, bananas, grapes, oranges\n- **Veggies** — carrots, broccoli (try them with dip!)\n- **Protein** — chicken, eggs, mac & cheese\n- **Drinks** — water is the BEST! Milk is great too!\n\nHealthy food gives you **superpowers** to fight germs and stay strong! 🦸 If you have food allergies, always ask a grown-up before trying something new!",
+  default: "That's a GREAT question! 🌟 I think you should ask your doctor or a grown-up about that — they know the most about YOUR specific health. But I'm super proud of you for being curious and asking questions! That's what Health Heroes do! 💪\n\nWant to ask me something else? I'm all ears! 😊",
 }

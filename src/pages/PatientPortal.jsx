@@ -7,7 +7,8 @@ import AIAssistant from '../components/AIAssistant'
 import LiveAvatar from '../components/LiveAvatar'
 import CreateContent from '../components/CreateContent'
 import { samplePatient, getPatientById } from '../data/patientData'
-import { CalendarDays, MessageCircle, Plus, Film, Video, Clock } from 'lucide-react'
+import MedicationReminders from '../components/MedicationReminders'
+import { CalendarDays, MessageCircle, Plus, Film, Video, Clock, Bell } from 'lucide-react'
 
 export default function PatientPortal() {
   const { user } = useAuth()
@@ -53,14 +54,16 @@ export default function PatientPortal() {
   }
 
   const tabs = [
-    { id: 'recovery', label: 'My Lessons', icon: CalendarDays },
-    { id: 'avatar', label: 'Video Chat', icon: Video },
-    { id: 'assistant', label: 'Ask Questions', icon: MessageCircle },
+    { id: 'recovery', label: 'My Shows', icon: CalendarDays },
+    { id: 'avatar', label: 'Talk to Doc', icon: Video },
+    { id: 'reminders', label: 'Reminders', icon: Bell },
+    { id: 'assistant', label: 'Ask Buddy', icon: MessageCircle },
   ]
 
   const tabColors = [
     { id: 'recovery', bg: 'bg-medflix-red', border: 'border-medflix-red', light: 'bg-red-50' },
     { id: 'avatar', bg: 'bg-medflix-blue', border: 'border-medflix-blue', light: 'bg-blue-50' },
+    { id: 'reminders', bg: 'bg-medflix-purple', border: 'border-medflix-purple', light: 'bg-purple-50' },
     { id: 'assistant', bg: 'bg-medflix-yellow', border: 'border-medflix-yellow', light: 'bg-yellow-50' },
   ];
 
@@ -134,6 +137,13 @@ export default function PatientPortal() {
         )}
         {activeTab === 'avatar' && (
           <LiveAvatar patient={currentPatient} />
+        )}
+        {activeTab === 'reminders' && (
+          <MedicationReminders
+            patientName={currentPatient.name}
+            diagnosis={currentPatient.diagnosis}
+            userId={user?.id}
+          />
         )}
         {activeTab === 'assistant' && (
           <AIAssistant patientName={currentPatient.name} diagnosis={plan?.diagnosis || currentPatient.diagnosis} />

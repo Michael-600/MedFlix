@@ -171,60 +171,59 @@ export default function CreateContent({
   }
 
   // Get the primary doctor name from patient data
-  const doctorName = activePatient.careTeam?.[0]?.name || 'Dr. Sarah Chen'
+  const doctorName = activePatient.careTeam?.[0]?.name || 'Dr. Maya Patel'
 
-  // Episode definitions for structured generation
-  // NOTE: The presenter is an education GUIDE, not the patient's doctor.
-  // Videos should be 50-60 seconds, built from 5-7 scenes of detailed clinical content.
+  // Episode definitions — Kid-friendly titles and prompts
+  // Videos use fun, simple language for children ages 3-9+
   const episodeDefs = [
     {
       episode: 1,
-      title: 'Welcome & Introduction',
-      description: `A friendly guide welcomes you and explains what ${doctorName} has planned for your care, including an overview of your diagnosis, medications, and goals.`,
-      thumbnail: '🎬',
-      prompt: `Create a 60-second patient education video. A health guide welcomes the patient by name and provides an overview of their care journey: their diagnosis, the medications ${doctorName} has prescribed, and the goals they'll work toward. Reference specific medication names and health targets. The guide is NOT the doctor. Tone: warm, clear, reassuring.`,
+      title: 'Hi There!',
+      description: `Meet your Health Buddy and learn what this special show is all about! ${doctorName} made it just for you!`,
+      thumbnail: '👋',
+      prompt: `Create a 60-second kids health education video. A friendly Health Buddy greets the child by name, introduces the show, and explains they'll learn cool stuff about staying healthy. Fun, encouraging, simple words for ages 3-9. Use short sentences, warm tone.`,
     },
     {
       episode: 2,
-      title: 'Understanding Your Condition',
-      description: `A detailed explanation of the patient's specific diagnosis — what it means, how it affects the body, key numbers to understand, and why the treatment plan matters.`,
-      thumbnail: '📚',
-      prompt: `Create a 60-second educational video. A health guide explains the patient's SPECIFIC diagnosis in detail: what it is medically, how it affects the body, what the patient's current numbers mean (e.g., HbA1c, blood pressure, ejection fraction), and why ${doctorName}'s treatment plan targets those numbers. Use ONLY factual medical information. NO vague wellness talk. Reference the actual condition name and actual clinical values.`,
+      title: "What's Happening?",
+      description: `Learn about what's going on with your body — explained in a fun, easy way that's not scary at all!`,
+      thumbnail: '🔍',
+      prompt: `Create a 60-second kids health video. A Health Buddy explains the child's condition in simple, non-scary language. Use analogies kids understand. Be reassuring — "lots of kids go through this!" Fun cartoon-style visuals. Ages 3-9.`,
     },
     {
       episode: 3,
-      title: 'Your Medications',
-      description: `A thorough walkthrough of each prescribed medication: name, dose, when to take it, what it does, side effects to watch for, and important warnings from FDA data.`,
-      thumbnail: '💊',
-      prompt: `Create a 60-second medication education video. A health guide walks through EACH medication by name and dose, explaining: what it does, when and how to take it, common side effects from FDA data, and key warnings. Cover ALL prescribed medications one by one. Say "your doctor has prescribed" not "I prescribed".`,
+      title: 'Your Super Medicine!',
+      description: `Each medicine is like a superpower! Learn what each one does and how to use it (with a grown-up's help!)`,
+      thumbnail: '🛡️',
+      prompt: `Create a 60-second kids medication video. A Health Buddy explains each medicine as a superhero tool. Simple names, fun descriptions, always emphasize "a grown-up helps you." No scary side effects. Ages 3-9.`,
     },
     {
       episode: 4,
-      title: 'What to Expect',
-      description: `Practical week-by-week guidance: what changes to expect, how the body responds to treatment, monitoring schedule, and when things should start improving.`,
-      thumbnail: '📋',
-      prompt: `Create a 60-second patient preparation video. A health guide covers week-by-week expectations: how the body responds to the prescribed medications, what monitoring the patient needs to do, when they should see improvement, and practical tips for the first month. Reference specific medications and their expected timeline of effects.`,
+      title: 'What Happens Next?',
+      description: `Find out what's coming up — day by day, you'll feel better and better!`,
+      thumbnail: '⏰',
+      prompt: `Create a 60-second kids expectation video. A Health Buddy explains the timeline of getting better in simple terms. "Day 1 you might feel..., by day 3..." Encouraging, patient tone. Ages 3-9.`,
     },
     {
       episode: 5,
-      title: 'Lifestyle & Home Care',
-      description: `Specific diet, exercise, and daily habit recommendations based on the patient's condition, with actionable steps and measurable targets.`,
-      thumbnail: '🏠',
-      prompt: `Create a 60-second lifestyle guide video. A health guide gives SPECIFIC actionable recommendations for diet, exercise, and daily routines tailored to the patient's condition. Include measurable targets (e.g., "30 minutes of walking", "less than 2000mg sodium"). Reference how lifestyle changes interact with their specific medications.`,
+      title: 'Healthy Habits!',
+      description: `Fun things you can do every day — eat yummy healthy food, play, sleep well, and be strong!`,
+      thumbnail: '🍎',
+      prompt: `Create a 60-second kids healthy habits video. A Health Buddy covers fun daily routines: healthy eating, playing, sleeping well, and special habits for their condition. Energetic, encouraging. Ages 3-9.`,
     },
     {
       episode: 6,
-      title: 'Warning Signs & When to Call',
-      description: `Specific symptoms that need attention, organized by urgency — what to watch for with each medication, and exactly when to call the care team or go to the ER.`,
-      thumbnail: '⚠️',
-      prompt: `Create a 60-second warning signs video. A health guide lists SPECIFIC symptoms to watch for, organized by urgency level. Include medication-specific side effects (from FDA data) that require immediate attention. Explain exactly when to call the care team vs. go to the ER. Reference each medication's key warnings by name.`,
+      title: 'Uh Oh Moments!',
+      description: `Learn when to tell a grown-up that something doesn't feel right. Being brave means speaking up!`,
+      thumbnail: '📢',
+      prompt: `Create a 60-second kids warning signs video. A Health Buddy teaches when to tell a grown-up something's wrong. Simple "Uh Oh" signs. Practice phrases. Emphasize "telling a grown-up is BRAVE." Ages 3-9.`,
     },
     {
       episode: 7,
-      title: 'Your Goals & Next Steps',
-      description: `Review of the specific health goals the doctor has set, how to track progress, upcoming appointments, and an encouraging wrap-up of the care journey.`,
-      thumbnail: '🎯',
-      prompt: `Create a 60-second goals and next steps video. A health guide reviews each specific health goal the doctor has set, explains how to track progress (what numbers to monitor), lists upcoming milestones, and provides an encouraging summary of the entire care plan. Reference specific target values and timelines.`,
+      title: 'You Did It!',
+      description: `Celebrate! You're a Health Hero! Let's look at everything you learned and your awesome goals!`,
+      thumbnail: '🏆',
+      prompt: `Create a 60-second kids celebration video. A Health Buddy celebrates the child completing all episodes, reviews goals, shows the care team, and awards "Health Hero" status. Big celebration energy. Ages 3-9.`,
     },
   ]
 
@@ -539,9 +538,9 @@ export default function CreateContent({
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-1">Create Patient Education Content</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">Create Kids' Health Episodes</h2>
         <p className="text-base text-gray-700 font-medium">
-          Transform medical documents into engaging video episodes
+          Transform care plans into fun, kid-friendly video episodes
         </p>
       </div>
 
@@ -668,7 +667,7 @@ function SetupStep({
               type="text"
               value={patientName}
               onChange={(e) => onPatientName(e.target.value)}
-              placeholder="e.g., Marcus Thompson"
+              placeholder="e.g., Lily Chen"
               className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
             />
           </div>
@@ -678,7 +677,7 @@ function SetupStep({
               type="text"
               value={diagnosis}
               onChange={(e) => onDiagnosis(e.target.value)}
-              placeholder="e.g., Type 2 Diabetes"
+              placeholder="e.g., Childhood Asthma"
               className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
             />
           </div>

@@ -111,9 +111,9 @@ export default function DoctorPortal() {
           <div className="w-full max-w-6xl max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-gray-100 animate-scaleIn">
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-purple-50/50 to-transparent">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Create Education Content</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Create Health Episodes</h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  For {selectedPatient.name} • {selectedPatient.diagnosis}
+                  For {selectedPatient.name} ({selectedPatient.avatar || '🧒'}) • {selectedPatient.diagnosis}
                 </p>
               </div>
               <button
@@ -150,8 +150,8 @@ function PatientsTab({ selectedPatient, onSelectPatient, onCreateContent, sentPl
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">My Patients</h2>
-          <p className="text-base text-gray-700 mt-1 font-medium">{allPatients.length} patients in your care</p>
+          <h2 className="text-2xl font-bold text-gray-900">My Little Patients</h2>
+          <p className="text-base text-gray-700 mt-1 font-medium">{allPatients.length} kids in your care</p>
         </div>
       </div>
 
@@ -172,16 +172,8 @@ function PatientsTab({ selectedPatient, onSelectPatient, onCreateContent, sentPl
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg ring-2 ring-gray-300">
-                    <img 
-                      src={[
-                        'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop&crop=faces',
-                        'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=150&h=150&fit=crop&crop=faces',
-                        'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=150&h=150&fit=crop&crop=faces'
-                      ][idx % 3]}
-                      alt={pt.name}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100 text-3xl shadow-lg ring-2 ring-gray-300">
+                    {pt.avatar || '🧒'}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -193,7 +185,7 @@ function PatientsTab({ selectedPatient, onSelectPatient, onCreateContent, sentPl
                       )}
                     </div>
                     <p className="text-sm text-gray-600 mt-0.5">
-                      {pt.age}yo {pt.sex} — {pt.diagnosis}
+                      Age {pt.age}, {pt.sex} — {pt.diagnosis}
                     </p>
                     <div className="flex items-center gap-4 mt-2 flex-wrap">
                       <span className="flex items-center gap-1 text-sm text-gray-700 font-medium">
@@ -229,7 +221,7 @@ function PatientsTab({ selectedPatient, onSelectPatient, onCreateContent, sentPl
                       className="px-5 py-2.5 bg-medflix-accent text-gray-900 text-sm font-bold rounded-xl hover:bg-medflix-accentLight transition-colors flex items-center gap-2 shadow-lg shadow-medflix-accent/20 border-3 border-purple-700"
                     >
                       <Send className="w-4 h-4" />
-                      Create & Send Education Content
+                      Create & Send Health Episodes
                     </button>
                   )}
                 </div>
@@ -339,7 +331,7 @@ function SentContentTab({ sentPlans }) {
             <div className="mt-4 grid grid-cols-7 gap-2">
               {(record.plan?.days || []).slice(0, 7).map((day, i) => (
                 <div key={i} className="bg-gray-50 rounded-lg p-2 text-center">
-                  <div className="text-lg mb-1">{['🎬', '📚', '💊', '📋', '🏠', '⚠️', '🎯'][i]}</div>
+                  <div className="text-lg mb-1">{['👋', '🔍', '🛡️', '⏰', '🍎', '📢', '🏆'][i]}</div>
                   <p className="text-[10px] text-gray-600 leading-tight font-medium">{day.title}</p>
                   <div className="mt-1">
                     {day.videoId ? (
