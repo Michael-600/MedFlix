@@ -164,6 +164,44 @@ export default function VideoPlayer({
     setIsPlaying(!isPlaying)
   }
 
+  // Handle video seeking by clicking on progress bar
+  const handleProgressClick = (e) => {
+    const progressBar = e.currentTarget
+    const clickX = e.clientX - progressBar.getBoundingClientRect().left
+    const width = progressBar.offsetWidth
+    const clickedProgress = (clickX / width) * 100
+
+    if (hasRealVideo && videoRef.current && duration > 0) {
+      // Real video: seek to time
+      const seekTime = (clickedProgress / 100) * duration
+      videoRef.current.currentTime = seekTime
+      setCurrentTime(seekTime)
+      setProgress(clickedProgress)
+    } else {
+      // Simulated video: just update progress
+      setProgress(Math.max(0, Math.min(100, clickedProgress)))
+    }
+  }
+
+  // Handle skip forward/backward
+  const skipForward = () => {
+    if (hasRealVideo && videoRef.current && duration > 0) {
+      const newTime = Math.min(duration, currentTime + 10)
+      videoRef.current.currentTime = newTime
+      setCurrentTime(newTime)
+      setProgress((newTime / duration) * 100)
+    }
+  }
+
+  const skipBackward = () => {
+    if (hasRealVideo && videoRef.current && duration > 0) {
+      const newTime = Math.max(0, currentTime - 10)
+      videoRef.current.currentTime = newTime
+      setCurrentTime(newTime)
+      setProgress((newTime / duration) * 100)
+    }
+  }
+
   const formatTimeDuration = (secs) => {
     const m = Math.floor(secs / 60)
     const s = Math.floor(secs % 60)
@@ -211,7 +249,7 @@ export default function VideoPlayer({
         <div className="bg-medflix-dark rounded-2xl overflow-hidden shadow-2xl relative">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white/70 hover:text-white p-1 transition-colors z-10"
+            className="absolute top-4 right-4 text-gray-300 hover:text-gray-100 p-1 transition-colors z-10 bg-gray-900/50 rounded-full"
             aria-label="Close video"
           >
             <X className="w-6 h-6" />
@@ -239,8 +277,8 @@ export default function VideoPlayer({
               <div className="absolute inset-0 flex items-center justify-center bg-black/70">
                 <div className="text-center">
                   <Loader2 className="w-10 h-10 text-medflix-accent animate-spin mx-auto mb-3" />
-                  <p className="text-white text-sm font-medium">Loading video...</p>
-                  <p className="text-gray-400 text-xs mt-1">Fetching from HeyGen servers</p>
+                  <p className="text-gray-100 text-sm font-bold">Loading video...</p>
+                  <p className="text-gray-300 text-sm mt-1 font-medium">Fetching from HeyGen servers</p>
                 </div>
               </div>
             )}
@@ -248,16 +286,16 @@ export default function VideoPlayer({
             {/* Video load error */}
             {videoLoadError && (
               <div className="text-center px-6">
-                <AlertCircle className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
-                <p className="text-white font-medium mb-2">Video playback issue</p>
-                <p className="text-gray-400 text-sm mb-4">
+                <AlertCircle className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+                <p className="text-gray-100 font-bold mb-2 text-lg">Video playback issue</p>
+                <p className="text-gray-300 text-sm mb-4 font-medium">
                   The video URL may have expired or have CORS restrictions.
                 </p>
                 <a
                   href={videoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block px-5 py-2.5 bg-medflix-accent text-white rounded-lg font-medium hover:bg-medflix-accentLight transition-colors"
+                  className="inline-block px-5 py-2.5 bg-purple-600 text-gray-900 rounded-lg font-bold hover:bg-purple-500 transition-colors border-2 border-purple-800"
                 >
                   Open Video in New Tab
                 </a>
@@ -267,14 +305,14 @@ export default function VideoPlayer({
             {/* Still processing state */}
             {!hasRealVideo && !isLoading && fetchError === 'still_processing' && (
               <div className="text-center px-6">
-                <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Loader2 className="w-10 h-10 text-yellow-400 animate-spin" />
+                <div className="w-20 h-20 bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-orange-500/20">
+                  <Loader2 className="w-10 h-10 text-orange-400 animate-spin" />
                 </div>
-                <h3 className="text-white font-semibold text-lg mb-2">Video Still Rendering...</h3>
-                <p className="text-gray-400 text-sm mb-3">
+                <h3 className="text-gray-100 font-bold text-xl mb-2">Video Still Rendering...</h3>
+                <p className="text-gray-300 text-base mb-3 font-medium">
                   HeyGen is generating your video. This typically takes 1-5 minutes.
                 </p>
-                <p className="text-gray-500 text-xs">Auto-checking every 15 seconds</p>
+                <p className="text-gray-300 text-sm font-medium">Auto-checking every 15 seconds</p>
               </div>
             )}
 
@@ -282,20 +320,20 @@ export default function VideoPlayer({
             {!hasRealVideo && !isLoading && fetchError === 'generation_failed' && (
               <div className="text-center px-6">
                 <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
-                <p className="text-white font-medium mb-2">Video Generation Failed</p>
-                <p className="text-gray-400 text-sm">Please try regenerating this episode.</p>
+                <p className="text-gray-100 font-bold mb-2 text-lg">Video Generation Failed</p>
+                <p className="text-gray-300 text-sm font-medium">Please try regenerating this episode.</p>
               </div>
             )}
 
             {/* Network error state */}
             {!hasRealVideo && !isLoading && fetchError === 'network' && (
               <div className="text-center px-6">
-                <AlertCircle className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
-                <p className="text-white font-medium mb-2">Could not reach server</p>
-                <p className="text-gray-400 text-sm mb-4">Make sure the backend is running on port 3001.</p>
+                <AlertCircle className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+                <p className="text-gray-100 font-bold mb-2 text-lg">Could not reach server</p>
+                <p className="text-gray-300 text-sm mb-4 font-medium">Make sure the backend is running on port 3001.</p>
                 <button
                   onClick={() => day.videoId && fetchVideoUrl(day.videoId)}
-                  className="px-4 py-2 bg-medflix-accent text-white rounded-lg text-sm hover:bg-medflix-accentLight transition-colors"
+                  className="px-4 py-2 bg-purple-600 text-gray-900 rounded-lg text-sm font-bold hover:bg-purple-500 transition-colors border-2 border-purple-800"
                 >
                   <RefreshCw className="w-4 h-4 inline mr-1" />
                   Retry
@@ -306,32 +344,32 @@ export default function VideoPlayer({
             {/* Simulated video placeholder (no videoId at all) */}
             {!hasRealVideo && !isLoading && !fetchError && (
               <div className="text-center">
-                <div className="w-20 h-20 bg-medflix-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-28 h-28 bg-medflix-red rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl border-4 border-red-300">
                   {isPlaying ? (
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((i) => (
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4].map((i) => (
                         <div
                           key={i}
-                          className="w-1 bg-medflix-accent rounded-full animate-pulse"
+                          className="w-2 bg-medflix-red rounded-full animate-pulse"
                           style={{
-                            height: `${20 + Math.random() * 20}px`,
+                            height: `${24 + Math.random() * 20}px`,
                             animationDelay: `${i * 0.1}s`,
                           }}
                         />
                       ))}
                     </div>
                   ) : (
-                    <Play className="w-8 h-8 text-medflix-accent ml-1" fill="#00d4aa" />
+                    <Play className="w-12 h-12 text-gray-100 ml-2" fill="currentColor" />
                   )}
                 </div>
-                <h3 className="text-white font-semibold text-lg mb-1">
+                <h3 className="text-gray-100 font-semibold text-lg mb-1">
                   {day.episodeTitle || `Episode: ${day.title}`}
                 </h3>
-                <p className="text-gray-400 text-sm">Day {day.day} &bull; {day.title}</p>
+                <p className="text-gray-300 text-sm font-medium">Day {day.day} &bull; {day.title}</p>
                 {day.videoId && (
                   <div className="mt-3 flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
-                    <p className="text-yellow-400 text-xs">Video is being generated by AI...</p>
+                    <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
+                    <p className="text-orange-400 text-xs font-medium">Video is being generated by AI...</p>
                     <button
                       onClick={() => fetchVideoUrl(day.videoId)}
                       className="text-medflix-accent text-xs underline ml-2"
@@ -342,7 +380,7 @@ export default function VideoPlayer({
                   </div>
                 )}
                 {!day.videoId && !isPlaying && progress === 0 && (
-                  <p className="text-gray-500 text-xs mt-3">
+                  <p className="text-gray-200 text-sm mt-3 font-medium">
                     Click play to start your personalized episode
                   </p>
                 )}
@@ -352,46 +390,46 @@ export default function VideoPlayer({
             {/* Completion overlay */}
             {progress >= 100 && (
               <div className="absolute inset-0 bg-black/90 flex items-center justify-center animate-fadeIn">
-                <div className="text-center max-w-md">
-                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="w-8 h-8 text-green-500" />
+                <div className="text-center max-w-md px-6">
+                  <div className="w-24 h-24 shape-star bg-yellow-400 mx-auto mb-6 flex items-center justify-center shadow-2xl border-3 border-yellow-600">
+                    <span className="text-gray-900 font-black text-4xl">★</span>
                   </div>
-                  <h4 className="text-white text-lg font-semibold mb-2">Episode Complete!</h4>
-                  <p className="text-gray-400 text-sm mb-6">
-                    Great job! You've finished Day {day.day}.
+                  <h4 className="text-gray-100 text-3xl font-black mb-3">You Did It!</h4>
+                  <p className="text-gray-300 text-xl mb-8 font-bold">
+                    Day {day.day} Complete!
                   </p>
 
                   {/* Call-to-action for Live Avatar */}
-                  <div className="bg-medflix-accent/10 border border-medflix-accent/30 rounded-xl p-4 mb-6">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <Video className="w-5 h-5 text-medflix-accent" />
-                      <p className="text-white font-medium text-sm">Have Questions?</p>
+                  <div className="bg-blue-50 border-4 border-medflix-blue rounded-3xl p-6 mb-6">
+                    <div className="flex items-center justify-center gap-3 mb-3">
+                      <Video className="w-7 h-7 text-medflix-blue" />
+                      <p className="text-gray-900 font-black text-lg">Have Questions?</p>
                     </div>
-                    <p className="text-gray-400 text-xs mb-3">
-                      Chat with your AI health companion for personalized answers
+                    <p className="text-gray-700 text-base mb-4 font-bold">
+                      Chat with me! I can help!
                     </p>
                     <button
                       onClick={() => {
                         onClose()
                         if (onNavigateToAvatar) onNavigateToAvatar()
                       }}
-                      className="w-full px-4 py-2.5 bg-medflix-accent text-white rounded-lg font-medium hover:bg-medflix-accentLight transition-colors flex items-center justify-center gap-2"
+                      className="w-full px-6 py-4 bg-medflix-blue text-gray-900 rounded-2xl font-black text-lg hover:bg-medflix-blue-dark transition-all shadow-lg hover:scale-105 flex items-center justify-center gap-3 border-3 border-blue-700"
                     >
-                      <Video className="w-4 h-4" />
-                      Talk to Live Avatar
+                      <Video className="w-6 h-6" />
+                      Video Chat
                     </button>
                   </div>
 
                   <div className="flex gap-3 justify-center">
                     <button
                       onClick={onComplete}
-                      className="px-6 py-2.5 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors"
+                      className="px-8 py-4 bg-green-500 text-gray-900 rounded-2xl font-black text-lg hover:bg-green-600 transition-all shadow-xl hover:scale-105 border-3 border-green-700"
                     >
-                      Complete Day {day.day}
+                      Mark as Done! ✓
                     </button>
                     <button
                       onClick={onClose}
-                      className="px-6 py-2.5 border border-gray-600 text-gray-300 rounded-xl hover:bg-white/5 transition-colors"
+                      className="px-6 py-4 bg-gray-700 text-gray-100 rounded-2xl font-bold text-base hover:bg-gray-600 transition-all shadow-lg hover:scale-105 border-2 border-gray-600"
                     >
                       Close
                     </button>
@@ -403,14 +441,17 @@ export default function VideoPlayer({
 
           {/* Controls */}
           <div className="px-5 py-4 bg-medflix-darker">
-            {/* Progress Bar */}
+            {/* Progress Bar - Clickable for seeking */}
             <div className="mb-3">
-              <div className="bg-gray-700 rounded-full h-1 cursor-pointer group">
+              <div 
+                className="bg-gray-700 rounded-full h-2 cursor-pointer group relative"
+                onClick={handleProgressClick}
+              >
                 <div
-                  className="bg-medflix-accent h-1 rounded-full transition-all relative"
+                  className="bg-medflix-red h-2 rounded-full transition-all relative shadow-md pointer-events-none"
                   style={{ width: `${progress}%` }}
                 >
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-medflix-accent rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-medflix-yellow border-3 border-gray-900 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" />
                 </div>
               </div>
             </div>
@@ -418,30 +459,51 @@ export default function VideoPlayer({
             {/* Control Buttons */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
+                {/* Skip Backward */}
+                <button
+                  onClick={skipBackward}
+                  disabled={!hasRealVideo}
+                  className="text-gray-100 hover:text-medflix-blue transition-colors disabled:opacity-30 hover:scale-110"
+                  title="Skip back 10s"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
+                  </svg>
+                </button>
+                
+                {/* Play/Pause */}
                 <button
                   onClick={togglePlay}
                   disabled={progress >= 100 || (isLoading && !hasRealVideo)}
-                  className="w-9 h-9 flex items-center justify-center text-white hover:text-medflix-accent transition-colors disabled:opacity-50"
+                  className="w-12 h-12 flex items-center justify-center text-gray-100 hover:text-medflix-red transition-colors disabled:opacity-50 hover:scale-110"
                 >
                   {isPlaying ? (
-                    <Pause className="w-5 h-5" fill="currentColor" />
+                    <Pause className="w-6 h-6" fill="currentColor" />
                   ) : (
-                    <Play className="w-5 h-5" fill="currentColor" />
+                    <Play className="w-6 h-6" fill="currentColor" />
                   )}
                 </button>
-                <button className="text-white/60 hover:text-white transition-colors">
-                  <SkipForward className="w-4 h-4" />
+                
+                {/* Skip Forward */}
+                <button
+                  onClick={skipForward}
+                  disabled={!hasRealVideo}
+                  className="text-gray-100 hover:text-medflix-blue transition-colors disabled:opacity-30 hover:scale-110"
+                  title="Skip forward 10s"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z" />
+                  </svg>
                 </button>
-                <button className="text-white/60 hover:text-white transition-colors">
-                  <Volume2 className="w-4 h-4" />
-                </button>
-                <span className="text-xs text-gray-500 ml-2">
+
+                {/* Time Display */}
+                <span className="text-base text-gray-200 ml-2 font-mono font-bold">
                   {hasRealVideo
                     ? `${formatTimeDuration(currentTime)} / ${formatTimeDuration(duration)}`
                     : `${formatTimeDuration(progress * 3)} / 5:00`}
                 </span>
               </div>
-              <button className="text-white/60 hover:text-white transition-colors">
+              <button className="text-gray-300 hover:text-gray-100 transition-colors">
                 <Maximize2 className="w-4 h-4" />
               </button>
             </div>
@@ -451,25 +513,25 @@ export default function VideoPlayer({
           <div className="px-5 py-4 bg-medflix-darker border-t border-white/10">
             <div className="grid gap-4">
               <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+                <p className="text-sm uppercase tracking-wide text-gray-300 mb-2 font-bold">
                   Clinical Data Highlights
                 </p>
                 {evidenceStatus === 'loading' && (
-                  <p className="text-sm text-gray-400">Searching clinical data sources...</p>
+                  <p className="text-sm text-gray-300 font-medium">Searching clinical data sources...</p>
                 )}
                 {evidenceStatus === 'error' && (
-                  <p className="text-sm text-amber-300">
+                  <p className="text-sm text-amber-300 font-medium">
                     Unable to fetch evidence right now ({evidenceError}).
                   </p>
                 )}
                 {evidenceStatus === 'ready' ? (
                   <>
-                    <p className="text-sm text-gray-300 leading-relaxed">
+                    <p className="text-sm text-gray-200 leading-relaxed font-medium">
                       {evidence?.summary || 'No evidence summary returned.'}
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-300 font-medium">
                     Evidence summary will appear here once available.
                   </p>
                 )}

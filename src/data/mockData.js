@@ -4,8 +4,10 @@ export const visualStyles = [
     name: 'Friends',
     subtitle: 'Live-action sitcom',
     description: 'Live-action sitcom aesthetic. Warm, bright color palette with cozy interior lighting from practical lamps and natural windows. Soft, even lighting reminiscent of multi-camera TV setup. Natural skin tones, realistic human features and expressions, conversational body language. Modern 90s-2000s style with contemporary casual wardrobe. Ambient: light background chatter, everyday room tone. Shot on film with slight warmth. No harsh shadows, no cold tones.',
-    color: '#00d4aa',
-    preview: '🎬',
+    color: '#9333ea',
+    icon: 'Video',
+    image: null, // Add your licensed image path here (e.g., '/images/styles/friends.jpg')
+    emoji: '🎬',
   },
   {
     id: 'zootopia',
@@ -13,7 +15,9 @@ export const visualStyles = [
     subtitle: 'Disney 3D animation',
     description: 'Disney 3D animation style with vibrant, saturated colors and smooth character models. Expressive anthropomorphic characters with detailed fur/skin textures. Bright, optimistic lighting with soft shadows. Clean environments with rich detail. Cinematic camera angles with depth of field effects.',
     color: '#3b82f6',
-    preview: '🦊',
+    icon: 'Sparkles',
+    image: null, // Add your licensed image path here
+    emoji: '🦊',
   },
   {
     id: 'anime',
@@ -21,7 +25,9 @@ export const visualStyles = [
     subtitle: 'Japanese 2D animation',
     description: 'Japanese anime aesthetic with clean line art and cel-shaded coloring. Expressive character designs with large, detailed eyes. Dynamic action poses and emotional expressions. Soft gradients and atmospheric lighting. Cherry blossom and nature motifs for medical settings.',
     color: '#ec4899',
-    preview: '🌸',
+    icon: 'Palette',
+    image: null, // Add your licensed image path here
+    emoji: '🎨',
   },
   {
     id: 'the-office',
@@ -29,7 +35,9 @@ export const visualStyles = [
     subtitle: 'Mockumentary',
     description: 'Mockumentary style with handheld camera feel and natural office lighting. Documentary-style talking head interviews. Realistic settings with fluorescent office lighting. Deadpan humor delivery with direct-to-camera moments. Casual, everyday wardrobe and relatable environments.',
     color: '#f59e0b',
-    preview: '📋',
+    icon: 'Camera',
+    image: null, // Add your licensed image path here
+    emoji: '📷',
   },
   {
     id: 'pixar',
@@ -37,7 +45,9 @@ export const visualStyles = [
     subtitle: '3D animation',
     description: 'Pixar-quality 3D animation with incredible attention to detail in textures and lighting. Heartwarming character designs with exaggerated proportions. Rich, cinematic color grading with volumetric lighting. Emotionally resonant storytelling through visual cues.',
     color: '#8b5cf6',
-    preview: '🎪',
+    icon: 'Film',
+    image: null, // Add your licensed image path here
+    emoji: '💡',
   },
   {
     id: 'spider-verse',
@@ -45,7 +55,9 @@ export const visualStyles = [
     subtitle: 'Comic book animation',
     description: 'Bold comic book animation with halftone dots, Ben-Day dots, and thick ink outlines. Dynamic panel compositions and split-screen storytelling. Vibrant pop art colors with dramatic contrast. Kinetic energy in every frame with motion blur effects.',
     color: '#ef4444',
-    preview: '🕷️',
+    icon: 'Zap',
+    image: null, // Add your licensed image path here
+    emoji: '⚡',
   },
   {
     id: 'south-park',
@@ -53,7 +65,9 @@ export const visualStyles = [
     subtitle: 'Cutout animation',
     description: 'Simple cutout animation with flat geometric shapes and bold outlines. Minimalist character designs with exaggerated expressions. Bright, primary color palette. Paper-craft aesthetic with simple backgrounds. Direct, blunt delivery style.',
     color: '#f97316',
-    preview: '📄',
+    icon: 'FileText',
+    image: null, // Add your licensed image path here
+    emoji: '✂️',
   },
   {
     id: 'custom',
@@ -61,7 +75,9 @@ export const visualStyles = [
     subtitle: 'Your own style',
     description: '',
     color: '#6b7280',
-    preview: '✨',
+    icon: 'Settings',
+    image: null,
+    emoji: '⚙️',
   },
 ]
 

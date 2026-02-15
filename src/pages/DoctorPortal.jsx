@@ -39,26 +39,48 @@ export default function DoctorPortal() {
   }
 
   const tabs = [
-    { id: 'patients', label: 'My Patients', icon: Users },
-    { id: 'content', label: 'Sent Content', icon: Film },
+    { id: 'patients', label: 'Patients', icon: Users },
+    { id: 'content', label: 'Content Library', icon: Film },
   ]
 
   return (
-    <div className="min-h-screen bg-medflix-bg">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 relative overflow-hidden">
+      {/* Animated gradient orbs */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-20 right-10 w-[420px] h-[420px] bg-gradient-to-br from-medflix-purple to-pink-500 rounded-full opacity-35 blur-3xl animate-float-gentle"></div>
+        <div className="absolute top-1/3 left-20 w-96 h-96 bg-gradient-to-br from-medflix-blue to-cyan-400 opacity-30 blur-3xl animate-float-gentle animation-delay-1000" style={{animationDuration: '8s'}}></div>
+        <div className="absolute bottom-40 right-32 w-80 h-80 bg-gradient-to-br from-medflix-yellow to-orange-300 rounded-full opacity-40 blur-3xl animate-float-gentle animation-delay-2000" style={{animationDuration: '10s'}}></div>
+        <div className="absolute top-1/2 right-1/4 w-72 h-72 bg-gradient-to-br from-pink-400 to-medflix-purple rounded-full opacity-35 blur-3xl animate-float-gentle animation-delay-500" style={{animationDuration: '12s'}}></div>
+        <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-gradient-to-br from-cyan-300 to-medflix-blue rounded-full opacity-30 blur-3xl animate-float-gentle animation-delay-1500" style={{animationDuration: '9s'}}></div>
+        <div className="absolute top-2/3 left-20 w-80 h-80 bg-gradient-to-br from-orange-300 to-medflix-yellow rounded-full opacity-35 blur-3xl animate-float-gentle animation-delay-3000" style={{animationDuration: '11s'}}></div>
+      </div>
+
+      {/* Playful geometric shapes */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[10%] left-[12%] w-28 h-28 bg-medflix-purple/[0.03] blur-2xl rounded-full animate-float-gentle"></div>
+        <div className="absolute top-[15%] right-[10%] w-28 h-28 bg-medflix-blue/[0.03] blur-2xl" style={{clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'}}></div>
+        <div className="absolute top-[40%] left-[8%] w-28 h-28 bg-medflix-red/[0.03] blur-2xl rounded-lg rotate-45 animate-float-gentle animation-delay-1000"></div>
+        <div className="absolute top-[45%] right-[15%] w-28 h-28 bg-medflix-yellow/[0.03] blur-2xl rounded-full animate-float-gentle animation-delay-2000"></div>
+        <div className="absolute top-[70%] left-[15%] w-28 h-28 bg-medflix-purple/[0.02] blur-2xl rotate-45"></div>
+        <div className="absolute bottom-[15%] right-[12%] w-28 h-28 bg-medflix-red/[0.02] blur-2xl rounded-full animate-float-gentle animation-delay-500"></div>
+        <div className="absolute bottom-[20%] left-[50%] w-28 h-28 bg-medflix-blue/[0.02] blur-2xl rounded-full animate-float-gentle animation-delay-1800"></div>
+        <div className="absolute top-[25%] left-[50%] w-28 h-28 bg-medflix-yellow/[0.02] blur-2xl rotate-12" style={{clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'}}></div>
+      </div>
+
       <Header />
 
       {/* Tabs */}
-      <div className="bg-white border-b">
+      <div className="bg-white/90 backdrop-blur-md border-b relative z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-5 py-3.5 text-sm font-medium border-b-2 transition-colors ${
+                className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-all ${
                   activeTab === tab.id
-                    ? 'border-medflix-dark text-medflix-dark'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -69,7 +91,7 @@ export default function DoctorPortal() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-8 relative z-10">
         {activeTab === 'patients' && (
           <PatientsTab
             selectedPatient={selectedPatient}
@@ -85,18 +107,18 @@ export default function DoctorPortal() {
 
       {/* Create Content Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="w-full max-w-6xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-6 animate-fadeIn">
+          <div className="w-full max-w-6xl max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-gray-100 animate-scaleIn">
+            <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-purple-50/50 to-transparent">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Create Education Content</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  For: {selectedPatient.name} — {selectedPatient.diagnosis}
+                <h2 className="text-2xl font-bold text-gray-900">Create Education Content</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  For {selectedPatient.name} • {selectedPatient.diagnosis}
                 </p>
               </div>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-2 text-gray-700 hover:text-gray-900 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full"
               >
                 <Plus className="w-6 h-6 rotate-45" />
               </button>
@@ -122,14 +144,14 @@ function PatientsTab({ selectedPatient, onSelectPatient, onCreateContent, sentPl
   const getPatientPlanCount = (ptId) => sentPlans.filter((p) => p.patient.id === ptId).length
 
   // Color palette for patient avatars
-  const avatarColors = ['bg-medflix-accent', 'bg-blue-500', 'bg-purple-500']
+  const avatarColors = ['bg-gradient-to-br from-purple-600 to-purple-500', 'bg-gradient-to-br from-purple-500 to-purple-400', 'bg-gradient-to-br from-purple-700 to-purple-600']
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">My Patients</h2>
-          <p className="text-sm text-gray-500 mt-1">{allPatients.length} patients in your care</p>
+          <p className="text-base text-gray-700 mt-1 font-medium">{allPatients.length} patients in your care</p>
         </div>
       </div>
 
@@ -150,8 +172,16 @@ function PatientsTab({ selectedPatient, onSelectPatient, onCreateContent, sentPl
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-lg ${avatarColors[idx] || 'bg-medflix-accent'}`}>
-                    {pt.name.split(' ').map((n) => n[0]).join('')}
+                  <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg ring-2 ring-gray-300">
+                    <img 
+                      src={[
+                        'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop&crop=faces',
+                        'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=150&h=150&fit=crop&crop=faces',
+                        'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=150&h=150&fit=crop&crop=faces'
+                      ][idx % 3]}
+                      alt={pt.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -166,12 +196,12 @@ function PatientsTab({ selectedPatient, onSelectPatient, onCreateContent, sentPl
                       {pt.age}yo {pt.sex} — {pt.diagnosis}
                     </p>
                     <div className="flex items-center gap-4 mt-2 flex-wrap">
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <Activity className="w-3 h-3" />
+                      <span className="flex items-center gap-1 text-sm text-gray-700 font-medium">
+                        <Activity className="w-4 h-4" />
                         {pt.conditions?.slice(0, 2).join(', ')}
                       </span>
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <FileText className="w-3 h-3" />
+                      <span className="flex items-center gap-1 text-sm text-gray-700 font-medium">
+                        <FileText className="w-4 h-4" />
                         {pt.medications?.length || 0} medications
                       </span>
                       {planCount > 0 && (
@@ -188,7 +218,7 @@ function PatientsTab({ selectedPatient, onSelectPatient, onCreateContent, sentPl
                   {!isSelected && (
                     <button
                       onClick={() => onSelectPatient(pt)}
-                      className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                      className="px-5 py-2.5 text-sm font-bold text-gray-900 bg-gray-100 border-3 border-gray-300 rounded-xl hover:bg-gray-200 hover:border-gray-400 transition-all shadow-md hover:scale-105"
                     >
                       Select
                     </button>
@@ -196,7 +226,7 @@ function PatientsTab({ selectedPatient, onSelectPatient, onCreateContent, sentPl
                   {isSelected && (
                     <button
                       onClick={onCreateContent}
-                      className="px-5 py-2.5 bg-medflix-accent text-white text-sm font-medium rounded-xl hover:bg-medflix-accentLight transition-colors flex items-center gap-2 shadow-lg shadow-medflix-accent/20"
+                      className="px-5 py-2.5 bg-medflix-accent text-gray-900 text-sm font-bold rounded-xl hover:bg-medflix-accentLight transition-colors flex items-center gap-2 shadow-lg shadow-medflix-accent/20 border-3 border-purple-700"
                     >
                       <Send className="w-4 h-4" />
                       Create & Send Education Content
@@ -209,30 +239,30 @@ function PatientsTab({ selectedPatient, onSelectPatient, onCreateContent, sentPl
               {isSelected && (
                 <div className="mt-6 pt-6 border-t border-gray-100 grid grid-cols-3 gap-6">
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Medications</h4>
+                    <h4 className="text-xs font-black text-gray-700 uppercase tracking-wide mb-2">Medications</h4>
                     <div className="space-y-1.5">
                       {pt.medications?.map((m, i) => (
                         <div key={i} className="flex items-center gap-2 text-sm">
                           <span className="w-2 h-2 rounded-full bg-medflix-accent" />
-                          <span className="text-gray-700">{m.name} {m.dose}</span>
-                          <span className="text-gray-400 text-xs">({m.frequency})</span>
+                          <span className="text-gray-700 font-medium">{m.name} {m.dose}</span>
+                          <span className="text-gray-600 text-xs font-medium">({m.frequency})</span>
                         </div>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Care Team</h4>
+                    <h4 className="text-xs font-black text-gray-700 uppercase tracking-wide mb-2">Care Team</h4>
                     <div className="space-y-1.5">
                       {pt.careTeam?.map((c, i) => (
                         <div key={i} className="text-sm">
                           <span className="text-gray-700 font-medium">{c.name}</span>
-                          <span className="text-gray-400 ml-1 text-xs">({c.role})</span>
+                          <span className="text-gray-600 ml-1 text-xs font-medium">({c.role})</span>
                         </div>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Health Goals</h4>
+                    <h4 className="text-xs font-black text-gray-700 uppercase tracking-wide mb-2">Health Goals</h4>
                     <div className="space-y-1.5">
                       {pt.goals?.slice(0, 3).map((g, i) => (
                         <div key={i} className="flex items-start gap-2 text-sm text-gray-700">
@@ -259,11 +289,11 @@ function SentContentTab({ sentPlans }) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center max-w-md">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Film className="w-10 h-10 text-gray-400" />
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Film className="w-10 h-10 text-medflix-blue" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">No content sent yet</h3>
-          <p className="text-gray-500">
+          <p className="text-gray-700 font-medium">
             Select a patient and create education content to send to them.
           </p>
         </div>
@@ -274,7 +304,7 @@ function SentContentTab({ sentPlans }) {
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900 mb-1">Sent Education Content</h2>
-      <p className="text-sm text-gray-500 mb-6">{sentPlans.length} content package{sentPlans.length !== 1 ? 's' : ''} delivered</p>
+      <p className="text-base text-gray-700 mb-6 font-medium">{sentPlans.length} content package{sentPlans.length !== 1 ? 's' : ''} delivered</p>
 
       <div className="space-y-4">
         {sentPlans.map((record) => (
@@ -297,7 +327,7 @@ function SentContentTab({ sentPlans }) {
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
                   <Send className="w-3 h-3" /> Sent to patient
                 </span>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-sm text-gray-700 mt-1 font-medium">
                   {new Date(record.sentAt).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
                   })}

@@ -90,48 +90,90 @@ export default function RecoveryPlan({
   return (
     <div>
       {/* Plan Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Personalized Care Plan</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Started: {formatDate(plan.startDate)} {'\u2022'} {plan.totalDays} episodes
-          {plan.diagnosis && <> {'\u2022'} {plan.diagnosis}</>}
-        </p>
-
-        {/* Patient context card */}
-        <div className="mt-4 bg-white border border-gray-200 rounded-xl p-4 max-w-2xl">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-medflix-accent/10 rounded-full flex items-center justify-center flex-shrink-0 text-medflix-accent font-bold text-sm">
-              {(patientName || samplePatient.name).split(' ').map(n => n[0]).join('')}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900 text-sm">{patientName || samplePatient.name}</p>
-              <p className="text-xs text-gray-500">
-                {samplePatient.age}yo {samplePatient.sex} {'\u2022'} {patientDiagnosis || samplePatient.diagnosis}
+      <div className="mb-10 relative">
+        {/* Decorative geometric shapes */}
+        <div className="absolute -top-4 -right-4 w-20 h-20 bg-medflix-yellow opacity-15 rounded-full"></div>
+        <div className="absolute -top-8 -left-8 w-16 h-16 bg-medflix-blue opacity-15 rotate-45"></div>
+        
+        <div className="relative bg-white rounded-3xl border-5 border-gray-200 p-8 shadow-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-4xl font-black text-gray-900 mb-2">My Learning Path!</h2>
+              <p className="text-xl text-gray-700 font-bold">
+                {plan.totalDays} Awesome Lessons
               </p>
-              <div className="flex flex-wrap gap-1 mt-1.5">
-                {samplePatient.medications.map((med) => (
-                  <span key={med.name} className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
-                    {med.name} {med.dose}
-                  </span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex gap-1">
+                {[...Array(plan.totalDays)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-8 h-8 shape-star flex items-center justify-center ${
+                      i < completedCount ? 'bg-yellow-400 border-2 border-yellow-600' : 'bg-gray-200 border-2 border-gray-400'
+                    }`}
+                  >
+                    <span className="text-gray-900 font-bold text-sm">★</span>
+                  </div>
                 ))}
               </div>
-              <p className="text-[11px] text-gray-400 mt-1">
-                Care Team: {samplePatient.careTeam.map(c => c.name).join(' • ')}
-              </p>
+              <span className="text-base font-black text-gray-700">{completedCount} of {plan.totalDays}</span>
+            </div>
+          </div>
+
+          {/* Patient context card */}
+          <div className="bg-blue-50 border-4 border-medflix-blue rounded-3xl p-6 mb-6">
+            <div className="flex items-start gap-5">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg ring-4 ring-medflix-blue">
+                <img 
+                  src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop&crop=faces"
+                  alt={patientName || samplePatient.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-2xl text-gray-900">{patientName || samplePatient.name}</p>
+                <p className="text-lg text-gray-700 mt-1 font-bold">
+                  Age {samplePatient.age} • {patientDiagnosis || samplePatient.diagnosis}
+                </p>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {samplePatient.medications.map((med, idx) => {
+                    const pillStyles = [
+                      'bg-red-600 text-gray-900 border-2 border-red-800',
+                      'bg-blue-600 text-gray-900 border-2 border-blue-800', 
+                      'bg-yellow-500 text-gray-900 border-2 border-yellow-700',
+                      'bg-purple-600 text-gray-900 border-2 border-purple-800'
+                    ];
+                    return (
+                      <span key={med.name} className={`text-sm ${pillStyles[idx % 4]} px-4 py-2 rounded-full font-bold shadow-md`}>
+                        {med.name} {med.dose}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="bg-gray-100 rounded-2xl p-6 border-4 border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xl font-black text-gray-900">Progress</span>
+              <span className="text-2xl font-black text-medflix-purple">
+                {Math.round((completedCount / plan.totalDays) * 100)}%
+              </span>
+            </div>
+            <div className="bg-white rounded-full h-8 shadow-inner border-3 border-gray-300 overflow-hidden">
+              <div
+                className="bg-medflix-purple h-full rounded-full transition-all duration-500 flex items-center justify-center border-2 border-purple-700"
+                style={{ width: `${(completedCount / plan.totalDays) * 100}%` }}
+              >
+                <span className="text-gray-900 font-black text-sm">
+                  {completedCount > 0 && `${completedCount} ★`}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Progress Bar */}
-        <div className="mt-4 bg-gray-200 rounded-full h-2 max-w-md">
-          <div
-            className="bg-medflix-accent h-2 rounded-full transition-all duration-500"
-            style={{ width: `${(completedCount / plan.totalDays) * 100}%` }}
-          />
-        </div>
-        <p className="text-xs text-gray-500 mt-1.5">
-          {completedCount} of {plan.totalDays} episodes completed
-        </p>
       </div>
 
       {/* Day Cards Grid */}

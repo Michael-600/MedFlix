@@ -1,6 +1,28 @@
-🧠 Product Design Doc
+🧠 MedFlix - AI-Powered Patient Education
 
-Codename: CareStream (replace later)
+Transforming dense medical documents into engaging, bite-sized video episodes.
+
+⸻
+
+## 🎨 Design System
+
+MedFlix features a modern, professional healthcare aesthetic with a consistent purple color scheme.
+
+### Color Palette
+- **Primary**: Purple (#9333ea) - Trust, care, innovation
+- **Success**: Green - Completed tasks and success states
+- **Warning**: Orange - Processing and warning states
+- **Error**: Red - Critical actions and errors
+- **Neutral**: Gray scale for backgrounds and text
+
+### Key Features
+- Sleek glassmorphism effects
+- Smooth gradient transitions
+- Professional purple-accented UI
+- Consistent shadows with color tints
+- Animated micro-interactions
+
+See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) and [COLOR_SYSTEM.md](./COLOR_SYSTEM.md) for detailed guidelines.
 
 ⸻
 
