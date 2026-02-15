@@ -301,39 +301,62 @@ Frontend: `http://localhost:5173` | Backend: `http://localhost:3001`
 
 ```
 MedFlix/
-├── src/                          # React Frontend
-│   ├── components/               # UI Components
-│   │   ├── RecoveryPlan.jsx      # 7-episode adventure view
-│   │   ├── DayCard.jsx           # Episode card + quiz + battle card
-│   │   ├── VideoPlayer.jsx       # HeyGen video playback
-│   │   ├── LiveAvatar.jsx        # Real-time AI voice conversation
-│   │   ├── AIAssistant.jsx       # Text-based Health Buddy
-│   │   ├── CreateContent.jsx     # Doctor content creation
+├── src/                            # React Frontend
+│   ├── main.jsx                    # App entry point
+│   ├── App.jsx                     # Router setup
+│   ├── index.css                   # Global styles (Tailwind)
+│   ├── components/                 # UI Components
+│   │   ├── RecoveryPlan.jsx        # 7-episode adventure view
+│   │   ├── DayCard.jsx             # Episode card + quiz + battle card
+│   │   ├── VideoPlayer.jsx         # HeyGen video playback
+│   │   ├── LiveAvatar.jsx          # Real-time AI voice conversation
+│   │   ├── AIAssistant.jsx         # Text-based Health Buddy
+│   │   ├── CreateContent.jsx       # Doctor content creation
 │   │   ├── MedicationReminders.jsx # Poke medication tracking
-│   │   └── Header.jsx            # Navigation
+│   │   ├── Header.jsx              # Navigation
+│   │   └── Logo.jsx                # App logo component
 │   ├── pages/
-│   │   ├── Login.jsx             # Role selection (Doctor / Kid)
-│   │   ├── DoctorPortal.jsx      # Doctor's patient management
-│   │   └── PatientPortal.jsx     # Kid's health adventure
+│   │   ├── Landing.jsx             # Public homepage
+│   │   ├── Login.jsx               # Role selection (Doctor / Kid)
+│   │   ├── DoctorPortal.jsx        # Doctor's patient management
+│   │   └── PatientPortal.jsx       # Kid's health adventure
+│   ├── contexts/
+│   │   └── AuthContext.jsx          # useAuth() hook, localStorage persistence
 │   ├── data/
-│   │   ├── patientData.js        # 3 kid patient profiles
-│   │   ├── quizData.js           # Quiz questions + battle cards
-│   │   └── mockData.js           # Defaults, medications, AI responses
+│   │   ├── patientData.js          # 3 kid patient profiles
+│   │   ├── quizData.js             # Quiz questions + battle cards
+│   │   └── mockData.js             # Defaults, medications, AI responses
+│   ├── utils/
+│   │   └── storage.js              # localStorage wrapper with "medflix_" prefix
 │   └── api/
-│       └── clinicalDataTool.js   # OpenFDA + DailyMed client
+│       └── clinicalDataTool.js     # OpenFDA + DailyMed client
 │
-├── server/                       # Node.js Backend
-│   ├── index.js                  # Express API server (all routes)
-│   ├── contextEngine.js          # Clinical data → episode context
-│   ├── episodeScripts.js         # 7 hardcoded episode builders
-│   ├── heygenPrompt.js           # Video generation prompt builder
-│   ├── perplexitySonar.js        # Perplexity AI integration
-│   ├── pokeMcp.js                # Poke MCP server
-│   └── mcp/                      # MCP tools (medication, reminders)
+├── server/                         # Node.js Backend
+│   ├── index.js                    # Express API server (all routes)
+│   ├── contextEngine.js            # Clinical data → episode context
+│   ├── episodeScripts.js           # 7 hardcoded episode builders
+│   ├── heygenPrompt.js             # Video generation prompt builder
+│   ├── perplexitySonar.js          # Perplexity AI integration
+│   ├── clinicalSearch.js           # ClinicalTrials.gov search (server-side)
+│   ├── openfdaClient.js            # OpenFDA drug data client
+│   ├── dailymedClient.js           # DailyMed drug label client
+│   ├── pokeMcp.js                  # Poke MCP server (stdio)
+│   └── mcp/                        # MCP tools for Poke agent
+│       ├── main.js                 # MCP server entry point
+│       ├── createServer.js         # Server factory + tool registration
+│       ├── api.js                  # Shared API helpers
+│       └── tools/
+│           ├── index.js            # Tool registry
+│           ├── getPatientContext.js # Patient info lookup
+│           ├── getMedicationSchedule.js # Medication schedule lookup
+│           ├── searchClinicalEvidence.js # ClinicalTrials.gov search
+│           ├── researchMedicalTopic.js  # Perplexity Sonar research
+│           ├── logMedicationTaken.js    # Log adherence events
+│           └── sendReminder.js          # Send reminder via Poke
 │
-├── README.md                     # ← You are here
-├── server/README.md              # Backend documentation
-└── src/README.md                 # Frontend documentation
+├── README.md                       # ← You are here
+├── server/README.md                # Backend documentation
+└── src/README.md                   # Frontend documentation
 ```
 
 ---
