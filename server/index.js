@@ -403,6 +403,7 @@ app.post('/api/liveavatar/token', async (req, res) => {
       voice_id,
       context_id,
       language,
+      quality,
       is_sandbox,
     } = req.body
 
@@ -411,7 +412,7 @@ app.post('/api/liveavatar/token', async (req, res) => {
       avatar_id: avatar_id || 'fc9c1f9f-bc99-4fd9-a6b2-8b4b5669a046', // Ann Doctor Sitting
       is_sandbox: is_sandbox ?? false,
       video_settings: {
-        quality: 'high',
+        quality: quality || 'high',
         encoding: 'H264',
       },
       avatar_persona: {

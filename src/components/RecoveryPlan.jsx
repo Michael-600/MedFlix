@@ -67,19 +67,6 @@ export default function RecoveryPlan({
     onUpdate(updated)
   }
 
-  const handleToggleChecklist = (dayIndex, checklistIndex) => {
-    const updated = { ...plan, days: [...plan.days] }
-    const day = { ...updated.days[dayIndex] }
-    const checklist = [...day.checklist]
-    checklist[checklistIndex] = {
-      ...checklist[checklistIndex],
-      checked: !checklist[checklistIndex].checked,
-    }
-    day.checklist = checklist
-    updated.days[dayIndex] = day
-    onUpdate(updated)
-  }
-
   const handleWatchVideo = (dayIndex) => {
     setShowVideo(dayIndex)
   }
@@ -155,7 +142,6 @@ export default function RecoveryPlan({
             day={day}
             dayIndex={index}
             onComplete={() => handleCompleteDay(index)}
-            onToggleChecklist={(ci) => handleToggleChecklist(index, ci)}
             onWatchVideo={() => handleWatchVideo(index)}
           />
         ))}

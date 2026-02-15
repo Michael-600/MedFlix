@@ -487,10 +487,10 @@ export default function CreateContent({
         description: video.description,
         completed: false,
         unlocked: idx === 0,
-        checklist: [
-          { id: `c${idx}-1`, text: 'Watch the full episode', checked: false },
-          { id: `c${idx}-2`, text: 'Complete knowledge check questions', checked: false },
-          { id: `c${idx}-3`, text: 'Review key takeaways', checked: false },
+        keyTakeaways: video.keyPoints || [
+          `Watch the full episode on ${video.title}`,
+          `Review what your doctor recommended`,
+          `Ask your care team if you have questions`,
         ],
         videoUrl: video.videoUrl || null,
         videoId: video.videoId || null,

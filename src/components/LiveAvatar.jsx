@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   Mic, MicOff, PhoneOff, Phone, AlertCircle,
-  Video, VideoOff, User,
+  Video, VideoOff, User, ChevronDown, Sparkles, Globe,
 } from 'lucide-react'
 import {
   Room,
@@ -12,6 +12,80 @@ import {
 import { samplePatient } from '../data/patientData'
 
 const STATE = { IDLE: 'idle', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error' }
+
+// ── Curated avatar presets (medical-relevant, with real API IDs) ──
+const AVATAR_PRESETS = [
+  {
+    id: 'fc9c1f9f-bc99-4fd9-a6b2-8b4b5669a046',
+    name: 'Ann',
+    subtitle: 'Doctor (Sitting)',
+    tag: 'Default',
+    preview_url: 'https://files2.heygen.ai/avatar/v3/26de369b2d4443e586dedf27abb1ce38_45570/preview_talk_4.webp',
+    default_voice: { id: 'de5574fc-009e-4a01-a881-9919ef8f5a0c', name: 'Ann - IA' },
+  },
+  {
+    id: '567e8371-f69f-49ec-9f2d-054083431165',
+    name: 'Ann',
+    subtitle: 'Doctor (Standing)',
+    tag: null,
+    preview_url: 'https://files2.heygen.ai/avatar/v3/699a4c2995914d39b2cb311a930d7720_45570/preview_talk_3.webp',
+    default_voice: { id: 'de5574fc-009e-4a01-a881-9919ef8f5a0c', name: 'Ann - IA' },
+  },
+  {
+    id: '513fd1b7-7ef9-466d-9af2-344e51eeb833',
+    name: 'Ann',
+    subtitle: 'Therapist',
+    tag: null,
+    preview_url: 'https://files2.heygen.ai/avatar/v3/75e0a87b7fd94f0981ff398b593dd47f_45570/preview_talk_4.webp',
+    default_voice: { id: 'de5574fc-009e-4a01-a881-9919ef8f5a0c', name: 'Ann - IA' },
+  },
+  {
+    id: null, // placeholder — will use Dexter Doctor Sitting
+    name: 'Dexter',
+    subtitle: 'Doctor (Sitting)',
+    tag: null,
+    preview_url: 'https://files2.heygen.ai/avatar/v3/f83fffc45faa4368b6db9597e63fb4e9_46860/preview_talk_4.webp',
+    default_voice: null,
+    _lookupName: 'Dexter Doctor Sitting',
+  },
+  {
+    id: null,
+    name: 'Judy',
+    subtitle: 'Doctor (Standing)',
+    tag: null,
+    preview_url: 'https://files2.heygen.ai/avatar/v3/13bc0ed39627493da8404a4be9e3be2c_64386/preview_talk_4.webp',
+    default_voice: null,
+    _lookupName: 'Judy Doctor Standing',
+  },
+  {
+    id: null,
+    name: 'Shawn',
+    subtitle: 'Therapist',
+    tag: null,
+    preview_url: 'https://files2.heygen.ai/avatar/v3/db2fb7fd0d044b908395a0111fa44d37_44946/preview_talk_4.webp',
+    default_voice: { id: '51afbab6-7af4-473b-95fc-6ce26aac8bb1', name: 'Shawn - IA' },
+    _lookupName: 'Shawn Therapist',
+  },
+]
+
+const QUALITY_OPTIONS = [
+  { value: 'high', label: 'High (720p)' },
+  { value: 'medium', label: 'Medium (480p)' },
+  { value: 'low', label: 'Low (360p)' },
+]
+
+const LANGUAGE_OPTIONS = [
+  { value: 'en', label: 'English', flag: '🇺🇸' },
+  { value: 'es', label: 'Spanish', flag: '🇪🇸' },
+  { value: 'fr', label: 'French', flag: '🇫🇷' },
+  { value: 'de', label: 'German', flag: '🇩🇪' },
+  { value: 'pt', label: 'Portuguese', flag: '🇧🇷' },
+  { value: 'zh', label: 'Chinese', flag: '🇨🇳' },
+  { value: 'ja', label: 'Japanese', flag: '🇯🇵' },
+  { value: 'ru', label: 'Russian', flag: '🇷🇺' },
+  { value: 'ko', label: 'Korean', flag: '🇰🇷' },
+  { value: 'ar', label: 'Arabic', flag: '🇸🇦' },
+]
 
 /**
  * Build a concise patient context string that will be prepended to every
@@ -51,6 +125,68 @@ export default function LiveAvatar({ patient }) {
   const [captionRole, setCaptionRole] = useState(null)
   const [callDuration, setCallDuration] = useState(0)
   const [connectingStep, setConnectingStep] = useState('')
+  const [isListening, setIsListening] = useState(false)
+  const [isThinking, setIsThinking] = useState(false)
+
+  // ── Avatar selection state ───────────────────────────
+  const [avatars, setAvatars] = useState(AVATAR_PRESETS)
+  const [selectedAvatarId, setSelectedAvatarId] = useState(AVATAR_PRESETS[0].id)
+  const [selectedQuality, setSelectedQuality] = useState('high')
+  const [selectedLanguage, setSelectedLanguage] = useState('en')
+  const [showAllAvatars, setShowAllAvatars] = useState(false)
+  const [loadingAvatars, setLoadingAvatars] = useState(false)
+
+  // Fetch real avatar list from API to resolve placeholder IDs and get more avatars
+  useEffect(() => {
+    let cancelled = false
+    const fetchAvatars = async () => {
+      setLoadingAvatars(true)
+      try {
+        const res = await fetch('/api/liveavatar/avatars')
+        const data = await res.json()
+        const apiAvatars = data?.data?.results || data?.data || []
+        if (!cancelled && apiAvatars.length > 0) {
+          // Resolve placeholders in presets
+          const resolved = AVATAR_PRESETS.map((preset) => {
+            if (preset.id) return preset
+            const match = apiAvatars.find((a) => a.name === preset._lookupName)
+            if (match) {
+              return {
+                ...preset,
+                id: match.id,
+                preview_url: match.preview_url || preset.preview_url,
+                default_voice: match.default_voice || preset.default_voice,
+              }
+            }
+            return preset
+          })
+
+          // Add extra avatars from API that aren't already in presets
+          const presetIds = new Set(resolved.map((p) => p.id).filter(Boolean))
+          const extras = apiAvatars
+            .filter((a) => !presetIds.has(a.id) && a.status === 'ACTIVE')
+            .map((a) => ({
+              id: a.id,
+              name: a.name?.split(' ')[0] || 'Avatar',
+              subtitle: a.name?.replace(/^\w+\s*/, '') || '',
+              tag: null,
+              preview_url: a.preview_url || '',
+              default_voice: a.default_voice || null,
+            }))
+
+          setAvatars([...resolved, ...extras])
+        }
+      } catch {
+        // Keep presets as-is
+      }
+      if (!cancelled) setLoadingAvatars(false)
+    }
+    fetchAvatars()
+    return () => { cancelled = true }
+  }, [])
+
+  const selectedAvatar = avatars.find((a) => a.id === selectedAvatarId) || avatars[0]
+  const displayedAvatars = showAllAvatars ? avatars : avatars.slice(0, 6)
 
   const roomRef = useRef(null)
   const avatarVideoRef = useRef(null)
@@ -67,6 +203,12 @@ export default function LiveAvatar({ patient }) {
   const forwardedTextsRef = useRef(new Set())
   // Whether we've sent the initial context to the avatar LLM
   const contextSentRef = useRef(false)
+  // Accumulate streaming transcription chunks for real-time caption display
+  const avatarChunkRef = useRef('')
+  const userChunkRef = useRef('')
+  const chunkTimerRef = useRef(null)
+  // Track when we forwarded a message to show "thinking" state
+  const thinkingTimerRef = useRef(null)
 
   // Build patient context prompt once (memoized)
   const patientContextPrompt = useMemo(
@@ -204,12 +346,20 @@ export default function LiveAvatar({ patient }) {
         if (d.stopped > 0) await new Promise((r) => setTimeout(r, 1500))
       } catch { /* non-critical */ }
 
-      // 1. Token
+      // 1. Token — pass selected avatar, voice, quality, language
       setConnectingStep('Setting up session...')
+      const tokenPayload = {
+        is_sandbox: false,
+        avatar_id: selectedAvatar?.id || undefined,
+        voice_id: selectedAvatar?.default_voice?.id || undefined,
+        language: selectedLanguage,
+        quality: selectedQuality,
+      }
+      console.log('[LiveAvatar] Token payload:', tokenPayload)
       const tokenRes = await fetch('/api/liveavatar/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_sandbox: false }),
+        body: JSON.stringify(tokenPayload),
       })
       const tokenData = await tokenRes.json()
       if (!tokenData.data?.session_token) throw new Error(tokenData.message || 'Token failed')
@@ -327,45 +477,94 @@ export default function LiveAvatar({ patient }) {
   }
 
   // ── Handle data channel events ──────────────────────
-  // When we get a final user.transcription, forward it to the avatar
-  // as avatar.speak_response so the LLM generates a reply.
-  // This is needed because CONVERSATIONAL auto-response doesn't trigger reliably.
+  // Streams transcription chunks in real-time for seamless captions,
+  // and forwards final user transcriptions to the LLM.
   const handleServerEvent = useCallback((event) => {
     const { event_type, text } = event
     switch (event_type) {
-      case 'avatar.speak_started':  setIsAvatarSpeaking(true);  break
-      case 'avatar.speak_ended':    setIsAvatarSpeaking(false); break
-      case 'user.speak_started':    setIsUserSpeaking(true);    break
-      case 'user.speak_ended':      setIsUserSpeaking(false);   break
+      case 'avatar.speak_started':
+        setIsAvatarSpeaking(true)
+        setIsThinking(false)
+        if (thinkingTimerRef.current) { clearTimeout(thinkingTimerRef.current); thinkingTimerRef.current = null }
+        break
+      case 'avatar.speak_ended':
+        setIsAvatarSpeaking(false)
+        avatarChunkRef.current = ''
+        setIsListening(true)
+        break
+      case 'user.speak_started':
+        setIsUserSpeaking(true)
+        setIsListening(true)
+        userChunkRef.current = ''
+        break
+      case 'user.speak_ended':
+        setIsUserSpeaking(false)
+        break
+
+      // Real-time streaming: show chunks as they arrive
+      case 'avatar.transcription.chunk':
+        if (text) {
+          avatarChunkRef.current += text
+          // Show the growing caption in real-time
+          setCaption(avatarChunkRef.current.trim())
+          setCaptionRole('avatar')
+          // Keep resetting the fade timer so it doesn't disappear mid-sentence
+          if (captionTimerRef.current) clearTimeout(captionTimerRef.current)
+          captionTimerRef.current = setTimeout(() => { setCaption(''); setCaptionRole(null) }, 10000)
+        }
+        break
+
+      case 'user.transcription.chunk':
+        if (text) {
+          userChunkRef.current += text
+          setCaption(userChunkRef.current.trim())
+          setCaptionRole('user')
+          if (captionTimerRef.current) clearTimeout(captionTimerRef.current)
+          captionTimerRef.current = setTimeout(() => { setCaption(''); setCaptionRole(null) }, 10000)
+        }
+        break
+
       case 'user.transcription':
         if (text) {
-          // GUARD: If the text contains our injected context marker, it's an
-          // echo from the API reflecting our own avatar.speak_response command
-          // back as a user.transcription.  Never forward these — they cause
-          // an infinite loop where each echo gets re-wrapped and re-sent.
+          // GUARD: If the text contains our injected context marker, it's an echo
           if (text.includes('[PATIENT CONTEXT') || text.includes('Patient says:')) {
             console.log(`[LiveAvatar] Skip echo (contains context marker)`)
             break
           }
 
+          // Show final transcription (replaces any streaming chunks)
+          userChunkRef.current = ''
           showCaption(text, 'user')
+          setIsListening(false)
 
           // Only forward each unique text ONCE to prevent infinite loops
           if (!forwardedTextsRef.current.has(text)) {
             forwardedTextsRef.current.add(text)
-            // Clear after 10s so the same phrase can be said again later
             setTimeout(() => forwardedTextsRef.current.delete(text), 10000)
-            // Prepend patient context so the LLM knows who it's talking to
             const contextualText = `${patientContextPrompt}\n\nPatient says: "${text}"`
             console.log(`[LiveAvatar] → Forwarding to LLM: "${text}"`)
             sendCommand('avatar.speak_response', { text: contextualText })
+            // Show "thinking" state while LLM processes
+            setIsThinking(true)
+            thinkingTimerRef.current = setTimeout(() => setIsThinking(false), 15000) // safety timeout
           } else {
             console.log(`[LiveAvatar] Skip duplicate forward: "${text}"`)
           }
         }
         break
-      case 'avatar.transcription':  if (text) showCaption(text, 'avatar'); break
-      case 'session.stopped':       setCallState(STATE.IDLE); cleanupAll(); break
+
+      case 'avatar.transcription':
+        if (text) {
+          // Final avatar transcription — show full text, reset chunk buffer
+          avatarChunkRef.current = ''
+          showCaption(text, 'avatar')
+        }
+        break
+
+      case 'session.stopped':
+        setCallState(STATE.IDLE)
+        cleanupAll()
+        break
       default: break
     }
   }, [showCaption, sendCommand, patientContextPrompt])
@@ -400,10 +599,16 @@ export default function LiveAvatar({ patient }) {
     setCallState(STATE.IDLE)
     sessionRef.current = { id: null, token: null }
     setCaption('')
+    setIsListening(false)
+    setIsThinking(false)
     seenTextsRef.current.clear()
     attachedTrackSids.current.clear()
     forwardedTextsRef.current.clear()
     contextSentRef.current = false
+    avatarChunkRef.current = ''
+    userChunkRef.current = ''
+    if (chunkTimerRef.current) { clearTimeout(chunkTimerRef.current); chunkTimerRef.current = null }
+    if (thinkingTimerRef.current) { clearTimeout(thinkingTimerRef.current); thinkingTimerRef.current = null }
   }
 
   const cleanupAll = () => {
@@ -442,37 +647,135 @@ export default function LiveAvatar({ patient }) {
 
         {/* ═══ IDLE / ERROR ═══ */}
         {(callState === STATE.IDLE || callState === STATE.ERROR) && (
-          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-medflix-darker to-gray-900">
+          <div className="absolute inset-0 z-30 flex flex-col bg-gradient-to-br from-gray-900 via-medflix-darker to-gray-900 overflow-y-auto">
             <div className="absolute inset-0 opacity-5 pointer-events-none">
               <div className="absolute top-20 left-20 w-64 h-64 bg-medflix-accent rounded-full blur-[100px]" />
               <div className="absolute bottom-20 right-20 w-48 h-48 bg-blue-500 rounded-full blur-[80px]" />
             </div>
-            <div className="relative z-10 text-center px-8">
-              <div className="relative w-32 h-32 mx-auto mb-8">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-medflix-accent/30 to-medflix-accentLight/30 flex items-center justify-center border-4 border-medflix-accent/40 shadow-lg shadow-medflix-accent/20">
-                  <User className="w-16 h-16 text-medflix-accent" strokeWidth={1.5} />
+
+            <div className="relative z-10 flex-1 flex flex-col items-center px-6 py-8">
+              {/* Header */}
+              <h2 className="text-2xl font-bold text-white mb-1">MedFlix Health Guide</h2>
+              <p className="text-gray-400 text-sm mb-6">Choose your AI guide and start a voice call</p>
+
+              {/* Avatar Grid */}
+              <div className="w-full max-w-lg mb-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Choose Your Guide</p>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {displayedAvatars.map((avatar) => {
+                    if (!avatar.id) return null
+                    const isSelected = selectedAvatarId === avatar.id
+                    return (
+                      <button
+                        key={avatar.id}
+                        onClick={() => setSelectedAvatarId(avatar.id)}
+                        className={`relative group rounded-xl border-2 overflow-hidden transition-all ${
+                          isSelected
+                            ? 'border-medflix-accent ring-2 ring-medflix-accent/30 scale-[1.02]'
+                            : 'border-white/10 hover:border-white/30'
+                        }`}
+                      >
+                        <div className="aspect-[3/4] bg-gray-800 relative">
+                          {avatar.preview_url ? (
+                            <img
+                              src={avatar.preview_url}
+                              alt={avatar.name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <User className="w-10 h-10 text-gray-600" />
+                            </div>
+                          )}
+                          {/* Selected overlay */}
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-medflix-accent/10 border-2 border-medflix-accent rounded-lg" />
+                          )}
+                          {/* Tag badge */}
+                          {avatar.tag && (
+                            <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-medflix-accent text-white text-[9px] font-bold rounded-md uppercase">
+                              {avatar.tag}
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-2 bg-gray-800/80">
+                          <p className="text-white text-xs font-semibold truncate">{avatar.name}</p>
+                          <p className="text-gray-500 text-[10px] truncate">{avatar.subtitle}</p>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-4 border-gray-900 flex items-center justify-center">
-                  <div className="w-3 h-3 bg-white rounded-full" />
+
+                {/* Show more / less */}
+                {avatars.length > 6 && (
+                  <button
+                    onClick={() => setShowAllAvatars(!showAllAvatars)}
+                    className="mt-2 w-full flex items-center justify-center gap-1 py-2 text-xs text-gray-400 hover:text-white transition-colors"
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllAvatars ? 'rotate-180' : ''}`} />
+                    {showAllAvatars ? 'Show less' : `Show all ${avatars.filter(a => a.id).length} avatars`}
+                  </button>
+                )}
+              </div>
+
+              {/* Settings Row */}
+              <div className="w-full max-w-lg flex gap-3 mb-6">
+                <div className="flex-1">
+                  <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 block">
+                    <Sparkles className="w-3 h-3 inline mr-1" />Video Quality
+                  </label>
+                  <select
+                    value={selectedQuality}
+                    onChange={(e) => setSelectedQuality(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-800 border border-white/10 rounded-lg text-white text-sm focus:border-medflix-accent outline-none cursor-pointer"
+                  >
+                    {QUALITY_OPTIONS.map((q) => (
+                      <option key={q.value} value={q.value}>{q.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 block">
+                    <Globe className="w-3 h-3 inline mr-1" />Language
+                  </label>
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-800 border border-white/10 rounded-lg text-white text-sm focus:border-medflix-accent outline-none cursor-pointer"
+                  >
+                    {LANGUAGE_OPTIONS.map((l) => (
+                      <option key={l.value} value={l.value}>{l.flag} {l.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-              <h2 className="text-3xl font-bold text-white mb-2">MedFlix Health Guide</h2>
-              <p className="text-gray-400 text-lg mb-1">Your Personal Care Education Assistant</p>
-              <p className="text-gray-500 text-sm mb-10">Available now to help you understand your care plan</p>
+
+              {/* Voice info */}
+              {selectedAvatar?.default_voice && (
+                <p className="text-gray-500 text-xs mb-4">
+                  Voice: <span className="text-gray-400">{selectedAvatar.default_voice.name}</span>
+                </p>
+              )}
+
+              {/* Error message */}
               {callState === STATE.ERROR && errorMsg && (
-                <div className="mb-8 px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-xl max-w-sm mx-auto">
+                <div className="mb-4 px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-xl max-w-sm">
                   <div className="flex items-center gap-2 justify-center">
                     <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
                     <p className="text-red-400 text-sm">{errorMsg}</p>
                   </div>
                 </div>
               )}
+
+              {/* Start Call Button */}
               <button onClick={startCall}
                 className="group inline-flex items-center gap-3 px-10 py-4 bg-green-500 text-white rounded-full font-semibold text-lg hover:bg-green-400 transition-all hover:scale-105 shadow-lg shadow-green-500/30">
                 <Phone className="w-6 h-6 group-hover:animate-pulse" />
                 Start Call
               </button>
-              <p className="text-gray-600 text-xs mt-6">Voice call with AI &bull; Speak naturally &bull; Camera optional</p>
+              <p className="text-gray-600 text-xs mt-4">Voice call with AI &bull; Speak naturally &bull; Camera optional</p>
             </div>
           </div>
         )}
@@ -506,11 +809,12 @@ export default function LiveAvatar({ patient }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-white/90 text-sm font-medium">MedFlix Health Guide</span>
+                  <span className="text-white/90 text-sm font-medium">{selectedAvatar?.name || 'Health Guide'} &mdash; {selectedAvatar?.subtitle || 'MedFlix'}</span>
                   <span className="text-white/40 text-sm">&bull;</span>
                   <span className="text-white/60 text-sm font-mono">{formatDuration(callDuration)}</span>
                 </div>
-                {isAvatarSpeaking && (
+                {/* Status indicator: Speaking / Thinking / Listening */}
+                {isAvatarSpeaking ? (
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-medflix-accent/20 rounded-full">
                     <div className="flex gap-0.5">
                       {[1, 2, 3].map((i) => (
@@ -520,7 +824,17 @@ export default function LiveAvatar({ patient }) {
                     </div>
                     <span className="text-medflix-accent text-xs font-medium">Speaking</span>
                   </div>
-                )}
+                ) : isThinking ? (
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/20 rounded-full">
+                    <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-ping" />
+                    <span className="text-yellow-400 text-xs font-medium">Thinking...</span>
+                  </div>
+                ) : isListening || isUserSpeaking ? (
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-green-500/20 rounded-full">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                    <span className="text-green-400 text-xs font-medium">Listening</span>
+                  </div>
+                ) : null}
               </div>
             </div>
 

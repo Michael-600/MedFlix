@@ -1,10 +1,9 @@
-import { Lock, Check, Play, CheckCircle2 } from 'lucide-react'
+import { Lock, Check, Play, CheckCircle2, Lightbulb } from 'lucide-react'
 
-export default function DayCard({ day, dayIndex, onComplete, onToggleChecklist, onWatchVideo }) {
+export default function DayCard({ day, dayIndex, onComplete, onWatchVideo }) {
   const isLocked = !day.unlocked
   const isCompleted = day.completed
-  const checkedCount = day.checklist.filter(c => c.checked).length
-  const allChecked = checkedCount === day.checklist.length
+  const takeaways = day.keyTakeaways || []
 
   return (
     <div
@@ -47,36 +46,23 @@ export default function DayCard({ day, dayIndex, onComplete, onToggleChecklist, 
       {/* Unlocked Active State */}
       {!isLocked && !isCompleted && (
         <>
-          {/* Checklist */}
-          <div className="mb-4">
-            <p className="text-xs font-medium text-gray-600 mb-2">
-              Checklist ({checkedCount}/{day.checklist.length})
-            </p>
-            <div className="space-y-2">
-              {day.checklist.map((item, i) => (
-                <label
-                  key={item.id}
-                  className="flex items-start gap-2 cursor-pointer group"
-                >
-                  <div className="mt-0.5 flex-shrink-0">
-                    <input
-                      type="checkbox"
-                      checked={item.checked}
-                      onChange={() => onToggleChecklist(i)}
-                      className="w-4 h-4 rounded border-gray-300 text-medflix-accent focus:ring-medflix-accent cursor-pointer"
-                    />
-                  </div>
-                  <span
-                    className={`text-xs leading-relaxed ${
-                      item.checked ? 'text-gray-400 line-through' : 'text-gray-700'
-                    }`}
-                  >
-                    {item.text}
-                  </span>
-                </label>
-              ))}
+          {/* Key Takeaways */}
+          {takeaways.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1.5">
+                <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                Key Takeaways
+              </p>
+              <ul className="space-y-1.5">
+                {takeaways.map((point, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-gray-600 leading-relaxed">
+                    <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-medflix-accent flex-shrink-0" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-2">
@@ -87,28 +73,44 @@ export default function DayCard({ day, dayIndex, onComplete, onToggleChecklist, 
               <Play className="w-3.5 h-3.5" fill="white" />
               Watch Video
             </button>
-            {allChecked && (
-              <button
-                onClick={onComplete}
-                className="flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors animate-fadeIn"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Mark Complete
-              </button>
-            )}
+            <button
+              onClick={onComplete}
+              className="flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Mark Complete
+            </button>
           </div>
         </>
       )}
 
-      {/* Completed State */}
+      {/* Completed State — show takeaways + rewatch */}
       {isCompleted && !isLocked && (
-        <button
-          onClick={onWatchVideo}
-          className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          <Play className="w-3.5 h-3.5" />
-          Rewatch Video
-        </button>
+        <div>
+          {takeaways.length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs font-medium text-gray-500 mb-1.5 flex items-center gap-1.5">
+                <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                Key Takeaways
+              </p>
+              <ul className="space-y-1">
+                {takeaways.map((point, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-gray-500 leading-relaxed">
+                    <Check className="w-3 h-3 mt-0.5 text-green-500 flex-shrink-0" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <button
+            onClick={onWatchVideo}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            <Play className="w-3.5 h-3.5" />
+            Rewatch Video
+          </button>
+        </div>
       )}
     </div>
   )
