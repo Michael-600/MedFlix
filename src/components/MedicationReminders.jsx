@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
-import { Bell, Phone, Plus, Trash2, Edit3, Check, X, Send, Wifi, WifiOff, Clock, Pill } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Bell, Phone, Plus, Trash2, Check, X, Send, Wifi, WifiOff, Clock, Pill, Sparkles, ChevronDown } from 'lucide-react'
 import { storage } from '../utils/storage'
-import { defaultMedications } from '../data/mockData'
+import { getPatientById, allPatients } from '../data/patientData'
 
 const FREQUENCY_OPTIONS = [
   { value: 'once_daily', label: 'Once daily' },
@@ -9,7 +9,35 @@ const FREQUENCY_OPTIONS = [
   { value: 'three_times_daily', label: 'Three times daily' },
   { value: 'four_times_daily', label: 'Four times daily' },
   { value: 'as_needed', label: 'As needed' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'emergency', label: 'Emergency only' },
 ]
+
+/** Map a medication frequency string from patient data to our frequency value */
+function mapFrequency(freq = '') {
+  const f = freq.toLowerCase()
+  if (f.includes('twice')) return 'twice_daily'
+  if (f.includes('three')) return 'three_times_daily'
+  if (f.includes('four')) return 'four_times_daily'
+  if (f.includes('once') && f.includes('week')) return 'weekly'
+  if (f.includes('weekly')) return 'weekly'
+  if (f.includes('needed') || f.includes('rescue') || f.includes('emergency')) return 'as_needed'
+  if (f.includes('daily')) return 'once_daily'
+  return 'once_daily'
+}
+
+/** Suggest reminder times based on frequency */
+function suggestTimes(freq) {
+  switch (freq) {
+    case 'twice_daily': return ['08:00', '20:00']
+    case 'three_times_daily': return ['08:00', '14:00', '20:00']
+    case 'four_times_daily': return ['08:00', '12:00', '16:00', '20:00']
+    case 'weekly': return ['09:00']
+    case 'as_needed':
+    case 'emergency': return []
+    default: return ['08:00']
+  }
+}
 
 export default function MedicationReminders({ patientName, diagnosis, userId }) {
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -18,18 +46,27 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
   const [medications, setMedications] = useState([])
   const [isRegistering, setIsRegistering] = useState(false)
   const [isSendingTest, setIsSendingTest] = useState(false)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [editingId, setEditingId] = useState(null)
   const [pokeConfigured, setPokeConfigured] = useState(true)
   const [statusMessage, setStatusMessage] = useState(null)
 
-  const [formData, setFormData] = useState({
-    name: '',
-    dosage: '',
-    frequency: 'once_daily',
-    times: ['08:00'],
-    instructions: '',
-  })
+  // Build suggested medications from the patient's actual medical record
+  const suggestedMeds = useMemo(() => {
+    // Try to find patient by userId (which matches patient id)
+    const patient = getPatientById(userId) || allPatients.find(p => p.name === patientName) || allPatients[0]
+    if (!patient?.medications) return []
+    return patient.medications.map((med, i) => ({
+      id: `suggested_${i}`,
+      name: med.name,
+      genericName: med.genericName || '',
+      dosage: med.dose || '',
+      frequency: mapFrequency(med.frequency),
+      frequencyLabel: med.frequency || '',
+      times: suggestTimes(mapFrequency(med.frequency)),
+      instructions: med.instructions || '',
+      purpose: med.purpose || '',
+      route: med.route || '',
+    }))
+  }, [userId, patientName])
 
   // Load saved state on mount
   useEffect(() => {
@@ -43,23 +80,13 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
     const savedMeds = storage.get(`medications_${userId}`)
     if (savedMeds) {
       setMedications(savedMeds)
-    } else if (diagnosis && defaultMedications[diagnosis]) {
-      // Auto-populate from defaults on first visit
-      const defaults = defaultMedications[diagnosis].map((med, i) => ({
-        ...med,
-        id: `med_${Date.now()}_${i}`,
-        active: true,
-      }))
-      setMedications(defaults)
-      storage.set(`medications_${userId}`, defaults)
     }
 
-    // Check if Twilio (SMS delivery) is configured
     fetch('/api/health')
       .then(r => r.json())
       .then(data => setPokeConfigured(data.twilio === true))
       .catch(() => setPokeConfigured(false))
-  }, [userId, diagnosis])
+  }, [userId])
 
   const showStatus = (msg, type = 'success') => {
     setStatusMessage({ msg, type })
@@ -69,8 +96,6 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
   const saveMedications = (meds) => {
     setMedications(meds)
     storage.set(`medications_${userId}`, meds)
-
-    // Sync to backend if registered
     if (patientId) {
       fetch('/api/poke/medications', {
         method: 'POST',
@@ -78,6 +103,48 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
         body: JSON.stringify({ patientId, medications: meds }),
       }).catch(err => console.error('Failed to sync medications:', err))
     }
+  }
+
+  /** Add a suggested medication to the active reminders list */
+  const handleAddSuggested = (suggested) => {
+    // Check if already added
+    if (medications.some(m => m.name === suggested.name)) {
+      showStatus(`${suggested.name} is already in your reminders!`, 'error')
+      return
+    }
+    const newMed = {
+      id: `med_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name: suggested.name,
+      dosage: suggested.dosage,
+      frequency: suggested.frequency,
+      times: suggested.times,
+      instructions: suggested.instructions,
+      active: true,
+    }
+    saveMedications([...medications, newMed])
+    showStatus(`${suggested.name} added to reminders!`)
+  }
+
+  /** Add ALL suggested medications at once */
+  const handleAddAll = () => {
+    const existingNames = new Set(medications.map(m => m.name))
+    const newMeds = suggestedMeds
+      .filter(s => !existingNames.has(s.name))
+      .map((s, i) => ({
+        id: `med_${Date.now()}_${i}`,
+        name: s.name,
+        dosage: s.dosage,
+        frequency: s.frequency,
+        times: s.times,
+        instructions: s.instructions,
+        active: true,
+      }))
+    if (newMeds.length === 0) {
+      showStatus('All medications are already added!', 'error')
+      return
+    }
+    saveMedications([...medications, ...newMeds])
+    showStatus(`Added ${newMeds.length} medication${newMeds.length > 1 ? 's' : ''} to reminders!`)
   }
 
   const handleRegister = async () => {
@@ -100,7 +167,6 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
         phoneNumber: phoneNumber.trim(),
       })
 
-      // Sync medications to backend
       if (medications.length > 0) {
         await fetch('/api/poke/medications', {
           method: 'POST',
@@ -149,63 +215,13 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
     }
   }
 
-  const resetForm = () => {
-    setFormData({ name: '', dosage: '', frequency: 'once_daily', times: ['08:00'], instructions: '' })
-    setShowAddForm(false)
-    setEditingId(null)
-  }
-
-  const handleAddMedication = () => {
-    if (!formData.name.trim() || !formData.dosage.trim()) return
-
-    if (editingId) {
-      const updated = medications.map(m =>
-        m.id === editingId ? { ...m, ...formData } : m
-      )
-      saveMedications(updated)
-    } else {
-      const newMed = {
-        ...formData,
-        id: `med_${Date.now()}`,
-        active: true,
-      }
-      saveMedications([...medications, newMed])
-    }
-    resetForm()
-  }
-
-  const handleEditMedication = (med) => {
-    setFormData({
-      name: med.name,
-      dosage: med.dosage,
-      frequency: med.frequency,
-      times: med.times || ['08:00'],
-      instructions: med.instructions || '',
-    })
-    setEditingId(med.id)
-    setShowAddForm(true)
-  }
-
   const handleDeleteMedication = (id) => {
     saveMedications(medications.filter(m => m.id !== id))
   }
 
-  const handleTimeChange = (index, value) => {
-    const newTimes = [...formData.times]
-    newTimes[index] = value
-    setFormData({ ...formData, times: newTimes })
-  }
+  // Check which suggested meds are already added
+  const addedNames = new Set(medications.map(m => m.name))
 
-  const addTimeSlot = () => {
-    setFormData({ ...formData, times: [...formData.times, '12:00'] })
-  }
-
-  const removeTimeSlot = (index) => {
-    if (formData.times.length <= 1) return
-    setFormData({ ...formData, times: formData.times.filter((_, i) => i !== index) })
-  }
-
-  // Not configured banner
   if (!pokeConfigured) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -213,7 +229,7 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
           <WifiOff className="w-10 h-10 text-amber-500 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-amber-800 mb-1">SMS Not Configured</h3>
           <p className="text-sm text-amber-600">
-            Medication reminders require Twilio credentials. Add <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">TWILIO_ACCOUNT_SID</code>, <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">TWILIO_AUTH_TOKEN</code>, and <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">TWILIO_PHONE_NUMBER</code> to your server environment to enable SMS reminders.
+            Medication reminders require Twilio credentials. Add <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">TWILIO_ACCOUNT_SID</code>, <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">TWILIO_AUTH_TOKEN</code>, and <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">TWILIO_PHONE_NUMBER</code> to your server environment.
           </p>
         </div>
       </div>
@@ -231,7 +247,7 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
         </div>
       )}
 
-      {/* ── Phone Registration Card ─────────────────── */}
+      {/* ── Phone Connection Card ─────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b bg-gradient-to-r from-medflix-accent/5 to-transparent">
           <div className="flex items-center gap-3">
@@ -289,208 +305,133 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
         </div>
       </div>
 
-      {/* ── Medication Schedule Card ────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b bg-gradient-to-r from-medflix-accent/5 to-transparent">
-          <div className="flex items-center justify-between">
+      {/* ── Suggested Medications from Patient Record ─── */}
+      {suggestedMeds.length > 0 && (
+        <div className="bg-white rounded-2xl border border-purple-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b bg-gradient-to-r from-purple-50 to-blue-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm">Medications from Care Plan</h3>
+                  <p className="text-xs text-gray-500">Pulled from {patientName}'s medical record — just click to add reminders</p>
+                </div>
+              </div>
+              {suggestedMeds.some(s => !addedNames.has(s.name)) && (
+                <button
+                  onClick={handleAddAll}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold hover:bg-purple-700 transition-colors flex items-center gap-1.5 shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add All
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="divide-y divide-gray-100">
+            {suggestedMeds.map((med) => {
+              const isAdded = addedNames.has(med.name)
+              return (
+                <div key={med.id} className={`px-6 py-4 flex items-start gap-4 transition-colors ${isAdded ? 'bg-green-50/50' : 'hover:bg-purple-50/30'}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${isAdded ? 'bg-green-100' : 'bg-purple-100'}`}>
+                    {isAdded ? (
+                      <Check className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <Pill className="w-5 h-5 text-purple-500" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-gray-900 text-sm">{med.name}</span>
+                      {med.genericName && (
+                        <span className="text-xs text-gray-400 italic">({med.genericName})</span>
+                      )}
+                      <span className="text-xs text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full font-medium">{med.dosage}</span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">{med.purpose}</p>
+                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {med.frequencyLabel}
+                      </span>
+                      {med.route && (
+                        <span className="text-xs text-gray-400">{med.route}</span>
+                      )}
+                      {med.times.length > 0 && (
+                        <span className="text-xs text-purple-500 font-medium">
+                          Suggested: {med.times.map(t => {
+                            const [h, m] = t.split(':')
+                            const hr = parseInt(h)
+                            return `${hr > 12 ? hr - 12 : hr}:${m} ${hr >= 12 ? 'PM' : 'AM'}`
+                          }).join(', ')}
+                        </span>
+                      )}
+                    </div>
+                    {med.instructions && (
+                      <p className="text-xs text-gray-400 mt-1 leading-relaxed">{med.instructions}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleAddSuggested(med)}
+                    disabled={isAdded}
+                    className={`flex-shrink-0 mt-1 px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${
+                      isAdded
+                        ? 'bg-green-100 text-green-700 border-2 border-green-300 cursor-default'
+                        : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm'
+                    }`}
+                  >
+                    {isAdded ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Added
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4" />
+                        Add
+                      </>
+                    )}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Quick Actions Card ──────────────────────── */}
+      {registered && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b bg-gradient-to-r from-medflix-accent/5 to-transparent">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-medflix-accent/10 rounded-xl flex items-center justify-center">
-                <Pill className="w-5 h-5 text-medflix-accent" />
+                <Send className="w-5 h-5 text-medflix-accent" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 text-sm">Medication Schedule</h3>
-                <p className="text-xs text-gray-500">{medications.length} medication{medications.length !== 1 ? 's' : ''} configured</p>
+                <h3 className="font-semibold text-gray-900 text-sm">Quick Actions</h3>
+                <p className="text-xs text-gray-500">Test your reminders</p>
               </div>
             </div>
+          </div>
+          <div className="p-6">
             <button
-              onClick={() => { resetForm(); setShowAddForm(true) }}
-              className="px-4 py-2 bg-medflix-accent text-gray-900 rounded-lg text-sm font-bold hover:bg-medflix-accentLight transition-colors flex items-center gap-1.5 border-2 border-purple-700"
+              onClick={handleSendTest}
+              disabled={isSendingTest}
+              className="px-5 py-2.5 bg-medflix-accent text-gray-900 rounded-lg text-sm font-bold hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 border-2 border-purple-700"
             >
-              <Plus className="w-4 h-4" />
-              Add
+              {isSendingTest ? (
+                <div className="w-4 h-4 border-2 border-gray-700 border-t-gray-900 rounded-full animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              Send Test Reminder
             </button>
           </div>
         </div>
-
-        <div className="divide-y divide-gray-100">
-          {medications.length === 0 && !showAddForm && (
-            <div className="p-8 text-center text-gray-400 text-sm">
-              No medications added yet. Click "Add" to get started.
-            </div>
-          )}
-
-          {medications.map((med) => (
-            <div key={med.id} className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/50 transition-colors">
-              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Pill className="w-5 h-5 text-blue-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-900 text-sm">{med.name}</span>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{med.dosage}</span>
-                </div>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs text-gray-500 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {med.times?.join(', ') || 'Not set'}
-                  </span>
-                  {med.instructions && (
-                    <span className="text-xs text-gray-400">{med.instructions}</span>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => handleEditMedication(med)}
-                  className="p-2 text-gray-400 hover:text-medflix-accent hover:bg-medflix-accent/5 rounded-lg transition-colors"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDeleteMedication(med.id)}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-
-          {/* Add / Edit Form */}
-          {showAddForm && (
-            <div className="p-6 bg-gray-50/50">
-              <h4 className="text-sm font-medium text-gray-700 mb-4">
-                {editingId ? 'Edit Medication' : 'Add New Medication'}
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Medication Name</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. Metformin"
-                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Dosage</label>
-                  <input
-                    type="text"
-                    value={formData.dosage}
-                    onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-                    placeholder="e.g. 500mg"
-                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Frequency</label>
-                  <select
-                    value={formData.frequency}
-                    onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
-                  >
-                    {FREQUENCY_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Instructions</label>
-                  <input
-                    type="text"
-                    value={formData.instructions}
-                    onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
-                    placeholder="e.g. Take with food"
-                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Time pickers */}
-              <div className="mt-4">
-                <label className="block text-xs font-medium text-gray-500 mb-2">Reminder Times</label>
-                <div className="flex flex-wrap gap-2 items-center">
-                  {formData.times.map((time, i) => (
-                    <div key={i} className="flex items-center gap-1">
-                      <input
-                        type="time"
-                        value={time}
-                        onChange={(e) => handleTimeChange(i, e.target.value)}
-                        className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
-                      />
-                      {formData.times.length > 1 && (
-                        <button
-                          onClick={() => removeTimeSlot(i)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={addTimeSlot}
-                    className="px-3 py-2 text-xs text-medflix-accent border border-medflix-accent/30 rounded-lg hover:bg-medflix-accent/5 transition-colors"
-                  >
-                    + Add time
-                  </button>
-                </div>
-              </div>
-
-              {/* Form actions */}
-              <div className="flex justify-end gap-2 mt-4">
-                <button
-                  onClick={resetForm}
-                  className="px-4 py-2 text-sm font-bold text-gray-900 bg-gray-100 border-2 border-gray-300 rounded-lg hover:bg-gray-200 hover:border-gray-400 transition-all shadow-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddMedication}
-                  disabled={!formData.name.trim() || !formData.dosage.trim()}
-                  className="px-4 py-2 bg-medflix-accent text-gray-900 rounded-lg text-sm font-bold hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 border-2 border-purple-700"
-                >
-                  <Check className="w-4 h-4" />
-                  {editingId ? 'Save Changes' : 'Add Medication'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Quick Actions Card ──────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b bg-gradient-to-r from-medflix-accent/5 to-transparent">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-medflix-accent/10 rounded-xl flex items-center justify-center">
-              <Bell className="w-5 h-5 text-medflix-accent" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 text-sm">Quick Actions</h3>
-              <p className="text-xs text-gray-500">Test your reminders and manage your connection</p>
-            </div>
-          </div>
-        </div>
-        <div className="p-6 flex flex-wrap gap-3">
-          <button
-            onClick={handleSendTest}
-            disabled={!registered || isSendingTest}
-            className="px-5 py-2.5 bg-medflix-accent text-gray-900 rounded-lg text-sm font-bold hover:bg-medflix-accentLight transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 border-2 border-purple-700"
-          >
-            {isSendingTest ? (
-              <div className="w-4 h-4 border-2 border-gray-700 border-t-gray-900 rounded-full animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            Send Test Reminder
-          </button>
-          {!registered && (
-            <p className="text-xs text-gray-400 self-center">Connect your phone above to send test reminders</p>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   )
 }

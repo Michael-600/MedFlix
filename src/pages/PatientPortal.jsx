@@ -207,7 +207,7 @@ function WaitingState({ patientName }) {
           Hey {patientName?.split(' ')[0]}!
         </h3>
         <p className="text-xl text-gray-700 mb-8 leading-relaxed font-bold">
-          Your teacher is making awesome lessons just for you!
+          Your doctor is making awesome episodes just for you!
         </p>
         <div className="inline-flex items-center gap-3 px-8 py-4 bg-blue-50 border-4 border-medflix-blue rounded-2xl text-gray-900 text-lg font-black shadow-xl">
           <Clock className="w-6 h-6 text-medflix-blue" />
