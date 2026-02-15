@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { storage } from '../utils/storage'
 import DayCard from './DayCard'
 import VideoPlayer from './VideoPlayer'
 import { samplePatient } from '../data/patientData'
@@ -9,6 +10,7 @@ export default function RecoveryPlan({
   patientDiagnosis,
   onUpdate,
   onNavigateToAvatar,
+  userId,
 }) {
   const [showVideo, setShowVideo] = useState(null)
   const refreshedRef = useRef(false)
@@ -65,6 +67,25 @@ export default function RecoveryPlan({
     }
 
     onUpdate(updated)
+
+    // Notify Poke about recovery milestone if registered
+    if (userId) {
+      const pokeReg = storage.get(`poke_registered_${userId}`)
+      if (pokeReg?.registered && pokeReg?.patientId) {
+        const day = updated.days[dayIndex]
+        const nextDay = dayIndex + 1 < updated.days.length ? updated.days[dayIndex + 1] : null
+        fetch('/api/poke/recovery-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            patientId: pokeReg.patientId,
+            dayNumber: day.day,
+            dayTitle: day.title,
+            nextDayTitle: nextDay?.title || null,
+          }),
+        }).catch(() => {})
+      }
+    }
   }
 
   const handleWatchVideo = (dayIndex) => {

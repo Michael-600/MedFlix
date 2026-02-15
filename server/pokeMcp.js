@@ -200,7 +200,7 @@ server.tool(
 // ──────────────────────────────────────────────────────
 server.tool(
   'send_reminder',
-  'Triggers a medication reminder for a registered patient via Poke (SMS/iMessage/WhatsApp). Optionally targets a specific medication.',
+  'Triggers a medication reminder for a registered patient. The message is delivered through Poke to their connected messaging app (iMessage/Telegram/SMS).',
   {
     patientId: z.string().describe('The patient ID from MedFlix'),
     medicationName: z.string().optional().describe('Specific medication name, or omit to remind about all'),

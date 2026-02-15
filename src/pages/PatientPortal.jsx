@@ -125,6 +125,7 @@ export default function PatientPortal() {
                 patientDiagnosis={plan?.diagnosis || currentPatient.diagnosis}
                 onUpdate={updatePlan}
                 onNavigateToAvatar={() => setActiveTab('avatar')}
+                userId={user?.id}
               />
             ) : (
               <WaitingState patientName={currentPatient.name} />
