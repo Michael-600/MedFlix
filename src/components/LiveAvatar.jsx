@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   Mic, MicOff, PhoneOff, Phone, AlertCircle,
   Video, VideoOff, User,
@@ -9,10 +9,38 @@ import {
   Track,
   ConnectionState,
 } from 'livekit-client'
+import { samplePatient } from '../data/patientData'
 
 const STATE = { IDLE: 'idle', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error' }
 
-export default function LiveAvatar() {
+/**
+ * Build a concise patient context string that will be prepended to every
+ * user message forwarded to the LiveAvatar LLM, so the doctor avatar
+ * always knows who it's talking to and what medications they're on.
+ */
+function buildPatientContextPrompt(pt) {
+  if (!pt) return ''
+  const meds = (pt.medications || [])
+    .map((m) => `${m.name} ${m.dose} ${m.frequency} (${m.purpose})`)
+    .join('; ')
+  const conditions = (pt.conditions || []).join(', ')
+  const doctorName = pt.careTeam?.[0]?.name || 'their doctor'
+  const goals = (pt.goals || []).slice(0, 3).join('; ')
+
+  return [
+    `[PATIENT CONTEXT — You are a friendly health education assistant helping ${pt.name} understand their care plan.`,
+    `Their doctor is ${doctorName}.`,
+    `Patient: ${pt.name}, ${pt.age}yo ${pt.sex}.`,
+    `Diagnosis: ${pt.diagnosis}.`,
+    conditions ? `Comorbidities: ${conditions}.` : null,
+    meds ? `Doctor-prescribed medications: ${meds}.` : null,
+    pt.allergies?.length ? `Allergies: ${pt.allergies.join(', ')}.` : null,
+    goals ? `Health goals set by their doctor: ${goals}.` : null,
+    `You are NOT the doctor. NEVER say "I prescribed" or "I diagnosed". Always refer to "${doctorName}" or "your doctor" when discussing prescriptions and diagnoses. Help the patient understand what their doctor has recommended. Be warm, specific, and personalized.]`,
+  ].filter(Boolean).join(' ')
+}
+
+export default function LiveAvatar({ patient }) {
   const [callState, setCallState] = useState(STATE.IDLE)
   const [isMicOn, setIsMicOn] = useState(true)
   const [isCamOn, setIsCamOn] = useState(false)
@@ -37,6 +65,14 @@ export default function LiveAvatar() {
   const attachedTrackSids = useRef(new Set())
   // Track texts we've already forwarded to LLM to prevent infinite loops
   const forwardedTextsRef = useRef(new Set())
+  // Whether we've sent the initial context to the avatar LLM
+  const contextSentRef = useRef(false)
+
+  // Build patient context prompt once (memoized)
+  const patientContextPrompt = useMemo(
+    () => buildPatientContextPrompt(patient || samplePatient),
+    [patient]
+  )
 
   // ── Call duration timer ─────────────────────────────
   useEffect(() => {
@@ -258,6 +294,19 @@ export default function LiveAvatar() {
       // Tell avatar to listen
       setTimeout(() => sendCommand('avatar.start_listening'), 1000)
 
+      // Send initial patient context to the LLM so the avatar knows who it's talking to
+      contextSentRef.current = false
+      setTimeout(() => {
+        if (!contextSentRef.current) {
+          contextSentRef.current = true
+          const pt = patient || samplePatient
+          const doctorName = pt.careTeam?.[0]?.name || 'your doctor'
+          const introPrompt = `${patientContextPrompt}\n\nGreet ${pt.name} warmly by name. Introduce yourself as their health education guide. Tell them you're here to help them understand what ${doctorName} has planned for their care. Ask how they're doing today. Keep it under 3 sentences.`
+          sendCommand('avatar.speak_response', { text: introPrompt })
+          console.log('[LiveAvatar] → Sent initial patient context to LLM')
+        }
+      }, 2000)
+
       // Keep-alive
       keepAliveRef.current = setInterval(async () => {
         try {
@@ -290,15 +339,26 @@ export default function LiveAvatar() {
       case 'user.speak_ended':      setIsUserSpeaking(false);   break
       case 'user.transcription':
         if (text) {
+          // GUARD: If the text contains our injected context marker, it's an
+          // echo from the API reflecting our own avatar.speak_response command
+          // back as a user.transcription.  Never forward these — they cause
+          // an infinite loop where each echo gets re-wrapped and re-sent.
+          if (text.includes('[PATIENT CONTEXT') || text.includes('Patient says:')) {
+            console.log(`[LiveAvatar] Skip echo (contains context marker)`)
+            break
+          }
+
           showCaption(text, 'user')
+
           // Only forward each unique text ONCE to prevent infinite loops
-          // (the API echoes back user.transcription after avatar.speak_response)
           if (!forwardedTextsRef.current.has(text)) {
             forwardedTextsRef.current.add(text)
             // Clear after 10s so the same phrase can be said again later
             setTimeout(() => forwardedTextsRef.current.delete(text), 10000)
+            // Prepend patient context so the LLM knows who it's talking to
+            const contextualText = `${patientContextPrompt}\n\nPatient says: "${text}"`
             console.log(`[LiveAvatar] → Forwarding to LLM: "${text}"`)
-            sendCommand('avatar.speak_response', { text })
+            sendCommand('avatar.speak_response', { text: contextualText })
           } else {
             console.log(`[LiveAvatar] Skip duplicate forward: "${text}"`)
           }
@@ -308,7 +368,7 @@ export default function LiveAvatar() {
       case 'session.stopped':       setCallState(STATE.IDLE); cleanupAll(); break
       default: break
     }
-  }, [showCaption, sendCommand])
+  }, [showCaption, sendCommand, patientContextPrompt])
 
   // ── Toggle mic ──────────────────────────────────────
   const toggleMic = async () => {
@@ -343,6 +403,7 @@ export default function LiveAvatar() {
     seenTextsRef.current.clear()
     attachedTrackSids.current.clear()
     forwardedTextsRef.current.clear()
+    contextSentRef.current = false
   }
 
   const cleanupAll = () => {
@@ -395,9 +456,9 @@ export default function LiveAvatar() {
                   <div className="w-3 h-3 bg-white rounded-full" />
                 </div>
               </div>
-              <h2 className="text-3xl font-bold text-white mb-2">Dr. Sarah AI</h2>
-              <p className="text-gray-400 text-lg mb-1">Your Personal Health Guide</p>
-              <p className="text-gray-500 text-sm mb-10">Available now for a live consultation</p>
+              <h2 className="text-3xl font-bold text-white mb-2">MedFlix Health Guide</h2>
+              <p className="text-gray-400 text-lg mb-1">Your Personal Care Education Assistant</p>
+              <p className="text-gray-500 text-sm mb-10">Available now to help you understand your care plan</p>
               {callState === STATE.ERROR && errorMsg && (
                 <div className="mb-8 px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-xl max-w-sm mx-auto">
                   <div className="flex items-center gap-2 justify-center">
@@ -427,7 +488,7 @@ export default function LiveAvatar() {
                   <Phone className="w-8 h-8 text-medflix-accent" />
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Calling Dr. Sarah AI...</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">Connecting to Health Guide...</h3>
               <p className="text-gray-400 text-sm animate-pulse">{connectingStep || 'Please wait...'}</p>
             </div>
             <button onClick={endCall}
@@ -445,7 +506,7 @@ export default function LiveAvatar() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-white/90 text-sm font-medium">Dr. Sarah AI</span>
+                  <span className="text-white/90 text-sm font-medium">MedFlix Health Guide</span>
                   <span className="text-white/40 text-sm">&bull;</span>
                   <span className="text-white/60 text-sm font-mono">{formatDuration(callDuration)}</span>
                 </div>

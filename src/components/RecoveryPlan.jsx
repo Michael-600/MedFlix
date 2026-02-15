@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import DayCard from './DayCard'
 import VideoPlayer from './VideoPlayer'
+import { samplePatient } from '../data/patientData'
 
 export default function RecoveryPlan({
   plan,
@@ -103,11 +104,36 @@ export default function RecoveryPlan({
     <div>
       {/* Plan Header */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Personalized Recovery Plan</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Personalized Care Plan</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Started: {formatDate(plan.startDate)} {'\u2022'} {plan.totalDays} days total
+          Started: {formatDate(plan.startDate)} {'\u2022'} {plan.totalDays} episodes
           {plan.diagnosis && <> {'\u2022'} {plan.diagnosis}</>}
         </p>
+
+        {/* Patient context card */}
+        <div className="mt-4 bg-white border border-gray-200 rounded-xl p-4 max-w-2xl">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-medflix-accent/10 rounded-full flex items-center justify-center flex-shrink-0 text-medflix-accent font-bold text-sm">
+              {(patientName || samplePatient.name).split(' ').map(n => n[0]).join('')}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-900 text-sm">{patientName || samplePatient.name}</p>
+              <p className="text-xs text-gray-500">
+                {samplePatient.age}yo {samplePatient.sex} {'\u2022'} {patientDiagnosis || samplePatient.diagnosis}
+              </p>
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {samplePatient.medications.map((med) => (
+                  <span key={med.name} className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                    {med.name} {med.dose}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1">
+                Care Team: {samplePatient.careTeam.map(c => c.name).join(' • ')}
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Progress Bar */}
         <div className="mt-4 bg-gray-200 rounded-full h-2 max-w-md">
@@ -117,7 +143,7 @@ export default function RecoveryPlan({
           />
         </div>
         <p className="text-xs text-gray-500 mt-1.5">
-          {completedCount} of {plan.totalDays} days completed
+          {completedCount} of {plan.totalDays} episodes completed
         </p>
       </div>
 

@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { getPerplexityKey, perplexitySonarChat } from './perplexitySonar.js'
 import { buildHeyGenPrompt, buildPerplexityDeepResearchPrompt, safePreview } from './heygenPrompt.js'
+import { buildEpisodeContext, gatherClinicalData, clearContextCache } from './contextEngine.js'
 
 const app = express()
 app.use(cors())
@@ -86,7 +87,7 @@ app.get('/api/heygen/voices', async (_req, res) => {
   }
 })
 
-// Generate video via Video Agent (prompt → video)
+// Generate video via Video Agent (prompt → video) — legacy endpoint
 app.post('/api/heygen/generate-video', async (req, res) => {
   try {
     const {
@@ -96,18 +97,22 @@ app.post('/api/heygen/generate-video', async (req, res) => {
       orientation,
       patient,
       episode,
+      clinicalContext,
+      // Legacy support: accept openEvidence too
       openEvidence,
       use_sonar,
       sonar_model,
       sonar_search_recency_filter,
     } = req.body
 
+    const contextData = clinicalContext || openEvidence || null
+
     let sonar = null
     if (use_sonar && PERPLEXITY_API_KEY) {
       const sonarMessages = buildPerplexityDeepResearchPrompt({
         patient,
         episode,
-        openEvidence,
+        clinicalContext: contextData,
       })
       const cacheKey = JSON.stringify({
         model: sonar_model || 'sonar',
@@ -137,7 +142,7 @@ app.post('/api/heygen/generate-video', async (req, res) => {
       basePrompt: basePrompt,
       patient,
       episode,
-      openEvidence,
+      clinicalContext: contextData,
       sonarResearch: sonar,
     })
 
@@ -223,6 +228,118 @@ app.get('/api/heygen/quota', async (_req, res) => {
     res.json(data)
   } catch (e) {
     console.error('quota error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// List available HeyGen avatars
+app.get('/api/heygen/avatars', async (_req, res) => {
+  try {
+    if (HEYGEN_DISABLED || !HEYGEN_API_KEY) {
+      return res.json({ data: { avatars: [] }, error: 'heygen_disabled' })
+    }
+    const data = await heygenFetch('/v2/avatars')
+    res.json(data)
+  } catch (e) {
+    console.error('avatars error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// ═══════════════════════════════════════════════════════
+//  CONTEXT ENGINE  –  Clinical Data Aggregation
+// ═══════════════════════════════════════════════════════
+
+// Clear context engine cache (useful for demo resets)
+app.post('/api/context/clear-cache', (_req, res) => {
+  clearContextCache()
+  res.json({ ok: true, message: 'Context cache cleared' })
+})
+
+// Build episode context from OpenFDA + DailyMed + Perplexity Sonar
+app.post('/api/context/build', async (req, res) => {
+  try {
+    const { patient, episode, episodeNumber } = req.body
+    if (!patient || !episode) {
+      return res.status(400).json({ error: 'patient and episode are required' })
+    }
+    const result = await buildEpisodeContext({ patient, episode, episodeNumber })
+    res.json(result)
+  } catch (e) {
+    console.error('context/build error:', e)
+    res.status(500).json({ ok: false, error: e.message })
+  }
+})
+
+// Gather raw clinical data only (without Perplexity synthesis)
+app.post('/api/context/clinical-data', async (req, res) => {
+  try {
+    const { patient } = req.body
+    if (!patient) {
+      return res.status(400).json({ error: 'patient is required' })
+    }
+    const data = await gatherClinicalData(patient)
+    res.json({ ok: true, data })
+  } catch (e) {
+    console.error('context/clinical-data error:', e)
+    res.status(500).json({ ok: false, error: e.message })
+  }
+})
+
+// Generate video via HeyGen Structured V2 API (avatar speaks scripted scenes)
+app.post('/api/heygen/generate-structured-video', async (req, res) => {
+  try {
+    const {
+      scenes,
+      avatar_id,
+      voice_id,
+      title,
+      dimension,
+    } = req.body
+
+    if (!scenes || !Array.isArray(scenes) || scenes.length === 0) {
+      return res.status(400).json({ error: 'scenes array is required' })
+    }
+
+    if (HEYGEN_DISABLED || !HEYGEN_API_KEY) {
+      return res.json({
+        data: { video_id: null },
+        error: HEYGEN_DISABLED ? 'heygen_disabled' : 'missing_heygen_api_key',
+      })
+    }
+
+    const defaultAvatarId = avatar_id || 'Angela-inTshirt-20220820'
+    const defaultVoiceId = voice_id || '1bd001e7e50f421d891986aad5571571'
+
+    const video_inputs = scenes.map((scene) => ({
+      character: {
+        type: 'avatar',
+        avatar_id: scene.avatar_id || defaultAvatarId,
+        avatar_style: scene.avatar_style || 'normal',
+      },
+      voice: {
+        type: 'text',
+        input_text: scene.script,
+        voice_id: scene.voice_id || defaultVoiceId,
+        speed: scene.speed || 1.0,
+      },
+      background: scene.background || { type: 'color', value: '#f0f4f8' },
+    }))
+
+    const body = {
+      video_inputs,
+      dimension: dimension || { width: 1280, height: 720 },
+    }
+    if (title) body.title = title
+
+    const data = await heygenFetch('/v2/video/generate', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+
+    res.json(data)
+  } catch (e) {
+    console.error('generate-structured-video error:', e)
     res.status(500).json({ error: e.message })
   }
 })

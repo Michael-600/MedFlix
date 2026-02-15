@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { visualStyles, defaultRecoveryPlan } from '../data/mockData'
 import { searchClinicalData } from '../api/clinicalDataTool'
+import { samplePatient, getPatientContext } from '../data/patientData'
 import {
   Palette, Users, Upload, Film, CheckCircle, PenLine,
   Plus, FileText, Image as ImageIcon, X, Trash2, Loader2, RefreshCw,
+  Database, Brain, Video,
 } from 'lucide-react'
 
 const STEPS = [
@@ -12,21 +14,87 @@ const STEPS = [
   { id: 'complete', label: 'Complete', icon: CheckCircle },
 ]
 
+// Avatar presets for the structured video API.
+// Each combines an avatar_id, voice_id, and avatar_style from HeyGen.
+// Users can also load custom avatars from the API.
+const AVATAR_PRESETS = [
+  {
+    id: 'angela',
+    name: 'Angela',
+    subtitle: 'Professional presenter',
+    avatar_id: 'Angela-inTshirt-20220820',
+    voice_id: '1bd001e7e50f421d891986aad5571571',
+    avatar_style: 'normal',
+    preview: '👩‍⚕️',
+  },
+  {
+    id: 'josh',
+    name: 'Josh',
+    subtitle: 'Friendly male guide',
+    avatar_id: 'josh_lite3_20230714',
+    voice_id: '077ab11b14f04ce0b49b5f0f3ccb1573',
+    avatar_style: 'normal',
+    preview: '👨‍⚕️',
+  },
+  {
+    id: 'anna',
+    name: 'Anna',
+    subtitle: 'Warm female presenter',
+    avatar_id: 'Anna_public_3_20240108',
+    voice_id: '2d5b0e6cf36f460aa7fc47e3eee4ba54',
+    avatar_style: 'normal',
+    preview: '👩',
+  },
+  {
+    id: 'edward',
+    name: 'Edward',
+    subtitle: 'Confident male expert',
+    avatar_id: 'Tyler-incasualsuit-20220721',
+    voice_id: '131a436c47064f708210df6628ef8f32',
+    avatar_style: 'normal',
+    preview: '👨',
+  },
+  {
+    id: 'closeup',
+    name: 'Close-Up',
+    subtitle: 'Intimate close-up style',
+    avatar_id: 'Angela-inTshirt-20220820',
+    voice_id: '1bd001e7e50f421d891986aad5571571',
+    avatar_style: 'closeUp',
+    preview: '🔍',
+  },
+  {
+    id: 'circle',
+    name: 'Circle Overlay',
+    subtitle: 'Avatar in a circle overlay',
+    avatar_id: 'Angela-inTshirt-20220820',
+    voice_id: '1bd001e7e50f421d891986aad5571571',
+    avatar_style: 'circle',
+    preview: '⭕',
+  },
+]
+
 export default function CreateContent({
   onComplete,
   defaultPatientName = '',
   defaultDiagnosis = '',
+  patient = null, // full patient object if provided
 }) {
+  // Use provided patient, fallback to samplePatient
+  const activePatient = patient || samplePatient
+
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedStyle, setSelectedStyle] = useState('friends')
+  const [selectedAvatar, setSelectedAvatar] = useState('angela')
   const [customDescription, setCustomDescription] = useState('')
-  const [patientName, setPatientName] = useState(defaultPatientName)
-  const [diagnosis, setDiagnosis] = useState(defaultDiagnosis || defaultRecoveryPlan.diagnosis || '')
+  const [patientName, setPatientName] = useState(defaultPatientName || activePatient.name)
+  const [diagnosis, setDiagnosis] = useState(defaultDiagnosis || activePatient.diagnosis || defaultRecoveryPlan.diagnosis || '')
   const [characters, setCharacters] = useState([])
   const [materials, setMaterials] = useState([])
   const [videos, setVideos] = useState([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationProgress, setGenerationProgress] = useState(0)
+  const [generationPhase, setGenerationPhase] = useState('')
 
   const activeStyle = visualStyles.find((s) => s.id === selectedStyle)
 
@@ -83,56 +151,61 @@ export default function CreateContent({
     setMaterials((prev) => prev.filter((m) => m.id !== id))
   }
 
+  // Get the primary doctor name from patient data
+  const doctorName = activePatient.careTeam?.[0]?.name || 'Dr. Sarah Chen'
+
   // Episode definitions for structured generation
+  // NOTE: The presenter is an education GUIDE, not the patient's doctor.
+  // Videos should be 50-60 seconds, built from 5-7 scenes of detailed clinical content.
   const episodeDefs = [
     {
       episode: 1,
-      title: 'Introduction',
-      description: 'Meet Dr. Sarah as she welcomes you and introduces your diagnosis in a clear, compassionate way.',
+      title: 'Welcome & Introduction',
+      description: `A friendly guide welcomes you and explains what ${doctorName} has planned for your care, including an overview of your diagnosis, medications, and goals.`,
       thumbnail: '🎬',
-      prompt: 'Create a warm, compassionate 30-second medical introduction video. A friendly female doctor presenter welcomes the patient, introduces herself, and explains that she will guide them through their recovery journey. Tone: reassuring, professional, and empathetic. Medical setting with clean background.',
+      prompt: `Create a 60-second patient education video. A health guide welcomes the patient by name and provides an overview of their care journey: their diagnosis, the medications ${doctorName} has prescribed, and the goals they'll work toward. Reference specific medication names and health targets. The guide is NOT the doctor. Tone: warm, clear, reassuring.`,
     },
     {
       episode: 2,
       title: 'Understanding Your Condition',
-      description: 'An explainer breaking down the medical terminology into simple, visual concepts.',
+      description: `A detailed explanation of the patient's specific diagnosis — what it means, how it affects the body, key numbers to understand, and why the treatment plan matters.`,
       thumbnail: '📚',
-      prompt: 'Create a 45-second educational medical explainer video. A presenter explains common medical terminology in simple language using visual aids and analogies. Cover: what the condition means, how it affects the body, and why the treatment plan is important. Tone: clear, educational, patient-friendly.',
+      prompt: `Create a 60-second educational video. A health guide explains the patient's SPECIFIC diagnosis in detail: what it is medically, how it affects the body, what the patient's current numbers mean (e.g., HbA1c, blood pressure, ejection fraction), and why ${doctorName}'s treatment plan targets those numbers. Use ONLY factual medical information. NO vague wellness talk. Reference the actual condition name and actual clinical values.`,
     },
     {
       episode: 3,
-      title: 'Treatment Overview',
-      description: 'A visual walkthrough of the treatment plan with clear timelines and milestones.',
+      title: 'Your Medications',
+      description: `A thorough walkthrough of each prescribed medication: name, dose, when to take it, what it does, side effects to watch for, and important warnings from FDA data.`,
       thumbnail: '💊',
-      prompt: 'Create a 40-second treatment overview video. A medical presenter walks through the treatment plan step by step, covering medications, schedules, and key milestones. Use a timeline visual metaphor. Tone: organized, hopeful, reassuring.',
+      prompt: `Create a 60-second medication education video. A health guide walks through EACH medication by name and dose, explaining: what it does, when and how to take it, common side effects from FDA data, and key warnings. Cover ALL prescribed medications one by one. Say "your doctor has prescribed" not "I prescribed".`,
     },
     {
       episode: 4,
       title: 'What to Expect',
-      description: 'Practical day-to-day guidance for what patients should prepare for.',
+      description: `Practical week-by-week guidance: what changes to expect, how the body responds to treatment, monitoring schedule, and when things should start improving.`,
       thumbnail: '📋',
-      prompt: 'Create a 40-second patient preparation video. Cover what to expect during the first week of treatment or recovery: common sensations, activity levels, and tips for daily comfort. Tone: practical, honest, supportive.',
+      prompt: `Create a 60-second patient preparation video. A health guide covers week-by-week expectations: how the body responds to the prescribed medications, what monitoring the patient needs to do, when they should see improvement, and practical tips for the first month. Reference specific medications and their expected timeline of effects.`,
     },
     {
       episode: 5,
-      title: 'Home Care Guide',
-      description: 'Step-by-step instructions for managing your recovery at home.',
+      title: 'Lifestyle & Home Care',
+      description: `Specific diet, exercise, and daily habit recommendations based on the patient's condition, with actionable steps and measurable targets.`,
       thumbnail: '🏠',
-      prompt: 'Create a 40-second home care guide video. A medical presenter explains essential at-home recovery steps: wound care, medication schedules, nutrition tips, and rest guidelines. Tone: caring, instructional, empowering.',
+      prompt: `Create a 60-second lifestyle guide video. A health guide gives SPECIFIC actionable recommendations for diet, exercise, and daily routines tailored to the patient's condition. Include measurable targets (e.g., "30 minutes of walking", "less than 2000mg sodium"). Reference how lifestyle changes interact with their specific medications.`,
     },
     {
       episode: 6,
-      title: 'Warning Signs',
-      description: 'Learn what symptoms to watch for and when to contact your care team.',
+      title: 'Warning Signs & When to Call',
+      description: `Specific symptoms that need attention, organized by urgency — what to watch for with each medication, and exactly when to call the care team or go to the ER.`,
       thumbnail: '⚠️',
-      prompt: 'Create a 30-second warning signs video. A medical presenter clearly explains symptoms that require immediate medical attention: fever, unusual swelling, severe pain, breathing difficulty. Include when and how to contact the care team. Tone: serious but calm, clear, actionable.',
+      prompt: `Create a 60-second warning signs video. A health guide lists SPECIFIC symptoms to watch for, organized by urgency level. Include medication-specific side effects (from FDA data) that require immediate attention. Explain exactly when to call the care team vs. go to the ER. Reference each medication's key warnings by name.`,
     },
     {
       episode: 7,
-      title: 'Recovery Milestones',
-      description: 'Track your progress and celebrate your recovery journey.',
+      title: 'Your Goals & Next Steps',
+      description: `Review of the specific health goals the doctor has set, how to track progress, upcoming appointments, and an encouraging wrap-up of the care journey.`,
       thumbnail: '🎯',
-      prompt: 'Create a 30-second recovery milestones video. A presenter congratulates the patient on starting their journey, outlines key recovery milestones week by week, and encourages them to stay positive. End with an uplifting message. Tone: encouraging, celebratory, motivational.',
+      prompt: `Create a 60-second goals and next steps video. A health guide reviews each specific health goal the doctor has set, explains how to track progress (what numbers to monitor), lists upcoming milestones, and provides an encouraging summary of the entire care plan. Reference specific target values and timelines.`,
     },
   ]
 
@@ -207,6 +280,7 @@ export default function CreateContent({
     if (materials.length === 0) return
     setIsGenerating(true)
     setGenerationProgress(0)
+    setGenerationPhase('Gathering clinical data...')
 
     const generatedVideos = []
     const totalEpisodes = episodeDefs.length
@@ -215,13 +289,45 @@ export default function CreateContent({
         ? customDescription
         : (visualStyles.find((s) => s.id === selectedStyle)?.description || '')
 
+    // Get selected avatar settings
+    const avatarPreset = AVATAR_PRESETS.find((a) => a.id === selectedAvatar) || AVATAR_PRESETS[0]
+
+    // Build full patient context from sample data
+    const patientContext = getPatientContext({
+      ...activePatient,
+      name: patientName || activePatient.name,
+      diagnosis: diagnosis || activePatient.diagnosis,
+    })
+
     for (let i = 0; i < totalEpisodes; i++) {
       const ep = episodeDefs[i]
-      setGenerationProgress(Math.round(((i + 1) / totalEpisodes) * 100))
+      const progressPct = Math.round(((i + 0.5) / totalEpisodes) * 100)
+      setGenerationProgress(progressPct)
 
       try {
-        // OpenEvidence: fetch light clinical evidence context to ground the script
-        let openEvidence = null
+        // Phase 1: Build context via the context engine (hardcoded episode builders + FDA/DailyMed data)
+        setGenerationPhase(`Episode ${ep.episode}: Building clinical context...`)
+        let episodeContext = null
+        try {
+          const contextRes = await fetch('/api/context/build', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              patient: patientContext,
+              episode: { title: ep.title, description: ep.description },
+              episodeNumber: ep.episode,
+            }),
+          })
+          const contextData = await contextRes.json()
+          if (contextData?.ok) {
+            episodeContext = contextData.data
+          }
+        } catch {
+          // Context is optional; proceed without it
+        }
+
+        // Phase 2: Also fetch ClinicalTrials.gov data (existing pipeline)
+        let clinicalContext = null
         try {
           const evidenceResult = await searchClinicalData({
             patientName,
@@ -232,39 +338,92 @@ export default function CreateContent({
             instruction: 'Tailor the script to the patient.',
           })
           if (evidenceResult?.ok) {
-            openEvidence = evidenceResult.data
+            clinicalContext = evidenceResult.data
           }
         } catch {
-          // Evidence is optional; proceed without it
+          // Evidence is optional
         }
 
-        const basePrompt = [
-          ep.prompt,
-          styleText ? `\nVISUAL STYLE:\n${styleText}` : null,
-        ].filter(Boolean).join('\n\n')
+        setGenerationPhase(`Episode ${ep.episode}: Generating video...`)
+        setGenerationProgress(Math.round(((i + 1) / totalEpisodes) * 100))
 
-        // Call HeyGen Video Agent API
-        const res = await fetch('/api/heygen/generate-video', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: basePrompt,
-            duration_sec: 30,
-            patient: {
-              name: patientName || 'Patient',
-              diagnosis: diagnosis || defaultRecoveryPlan.diagnosis,
-            },
-            episode: {
-              title: ep.title,
-              description: ep.description,
-              episode: ep.episode,
-            },
-            openEvidence,
-            use_sonar: true,
-          }),
-        })
-        const data = await res.json()
-        const videoId = data?.data?.video_id
+        // Phase 3: Generate video using structured V2 API if we have context scripts
+        let videoId = null
+        let videoData = null
+
+        if (episodeContext?.scenes?.length > 0 || (episodeContext?.greeting && episodeContext?.mainContent)) {
+          // Use structured video API — avatar speaks the scripted scenes
+          // Visual descriptions from the context engine inform the background/style of each scene
+          const contextScenes = episodeContext.scenes || [
+            { script: episodeContext.greeting, visual: '' },
+            { script: episodeContext.mainContent, visual: '' },
+            { script: episodeContext.closing, visual: '' },
+          ]
+          const scenes = contextScenes.map((s) => ({
+            script: s.script,
+            avatar_id: avatarPreset.avatar_id,
+            voice_id: avatarPreset.voice_id,
+            avatar_style: avatarPreset.avatar_style,
+            // Pass visual description as background context
+            visual: s.visual || '',
+          }))
+
+          try {
+            const res = await fetch('/api/heygen/generate-structured-video', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                scenes,
+                avatar_id: avatarPreset.avatar_id,
+                voice_id: avatarPreset.voice_id,
+                title: `Episode ${ep.episode}: ${ep.title}`,
+              }),
+            })
+            videoData = await res.json()
+            videoId = videoData?.data?.video_id
+          } catch {
+            // Fall back to Video Agent below
+          }
+        }
+
+        // Fallback: use Video Agent API if structured video didn't work
+        if (!videoId) {
+          // Include visual descriptions from context engine in the Video Agent prompt
+          const visualDirections = episodeContext?.scenes
+            ?.map((s, idx) => `Scene ${idx + 1}: ${s.visual}`)
+            .filter((v) => v)
+            .join('\n') || ''
+
+          const basePrompt = [
+            ep.prompt,
+            styleText ? `\nVISUAL STYLE:\n${styleText}` : null,
+            visualDirections ? `\nEXACT VISUAL DIRECTIONS (show ONLY these on screen):\n${visualDirections}` : null,
+          ].filter(Boolean).join('\n\n')
+
+          const res = await fetch('/api/heygen/generate-video', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: basePrompt,
+              duration_sec: 60,
+              patient: patientContext,
+              episode: {
+                title: ep.title,
+                description: ep.description,
+                episode: ep.episode,
+              },
+              clinicalContext,
+              use_sonar: true,
+            }),
+          })
+          videoData = await res.json()
+          videoId = videoData?.data?.video_id
+        }
+
+        // Build the full script text for display
+        const fullScript = episodeContext
+          ? [episodeContext.greeting, episodeContext.mainContent, episodeContext.closing].filter(Boolean).join('\n\n')
+          : null
 
         generatedVideos.push({
           id: videoId || `local-${i + 1}`,
@@ -276,9 +435,12 @@ export default function CreateContent({
           videoId: videoId || null,
           videoUrl: null,
           status: videoId ? 'processing' : 'prompt_ready',
-          errorMsg: videoId ? null : (data?.error || null),
-          research: data?.medflix || null,
-          prompt: data?.medflix?.prompt || basePrompt,
+          errorMsg: videoId ? null : (videoData?.error || null),
+          research: videoData?.medflix || null,
+          prompt: fullScript || videoData?.medflix?.prompt || ep.prompt,
+          keyPoints: episodeContext?.keyPoints || null,
+          contextSources: episodeContext?.sources || null,
+          clinicalData: episodeContext?.clinicalData || null,
         })
       } catch (e) {
         console.error(`Failed to generate episode ${ep.episode}:`, e)
@@ -303,6 +465,7 @@ export default function CreateContent({
     setVideos(generatedVideos)
     setIsGenerating(false)
     setGenerationProgress(100)
+    setGenerationPhase('')
     setCurrentStep(1)
   }
 
@@ -342,14 +505,16 @@ export default function CreateContent({
     // Reset for next time
     setCurrentStep(0)
     setSelectedStyle('friends')
+    setSelectedAvatar('angela')
     setCustomDescription('')
-    setPatientName(defaultPatientName)
-    setDiagnosis(defaultDiagnosis || defaultRecoveryPlan.diagnosis || '')
+    setPatientName(defaultPatientName || activePatient.name)
+    setDiagnosis(defaultDiagnosis || activePatient.diagnosis || defaultRecoveryPlan.diagnosis || '')
     setCharacters([])
     setMaterials([])
     setVideos([])
     setIsGenerating(false)
     setGenerationProgress(0)
+    setGenerationPhase('')
   }
 
   return (
@@ -414,6 +579,8 @@ export default function CreateContent({
             onDiagnosis={setDiagnosis}
             selectedStyle={selectedStyle}
             onSelectStyle={setSelectedStyle}
+            selectedAvatar={selectedAvatar}
+            onSelectAvatar={setSelectedAvatar}
             customDescription={customDescription}
             onCustomDescription={setCustomDescription}
             characters={characters}
@@ -427,6 +594,7 @@ export default function CreateContent({
             onGenerate={handleGenerateVideos}
             isGenerating={isGenerating}
             generationProgress={generationProgress}
+            generationPhase={generationPhase}
           />
         )}
 
@@ -456,10 +624,11 @@ function SetupStep({
   patientName, onPatientName,
   diagnosis, onDiagnosis,
   selectedStyle, onSelectStyle,
+  selectedAvatar, onSelectAvatar,
   customDescription, onCustomDescription,
   characters, onAddCharacter, onUpdateCharacter, onRemoveCharacter, onCharacterImage,
   materials, onAddMaterial, onRemoveMaterial,
-  onGenerate, isGenerating, generationProgress,
+  onGenerate, isGenerating, generationProgress, generationPhase,
 }) {
   return (
     <div className="space-y-8">
@@ -467,7 +636,7 @@ function SetupStep({
       <section>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Patient Context</h3>
         <p className="text-sm text-gray-500 mb-4">
-          This data is used to personalize the OpenEvidence + Perplexity Sonar research and the HeyGen prompt
+          Patient data is used to query OpenFDA, DailyMed, and Perplexity Sonar for personalized clinical context
         </p>
 
         <div className="grid grid-cols-2 gap-3">
@@ -477,7 +646,7 @@ function SetupStep({
               type="text"
               value={patientName}
               onChange={(e) => onPatientName(e.target.value)}
-              placeholder="e.g., Alex"
+              placeholder="e.g., Marcus Thompson"
               className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:border-medflix-accent focus:ring-2 focus:ring-medflix-accent/20 outline-none transition-all"
             />
           </div>
@@ -530,6 +699,38 @@ function SetupStep({
             selectedStyle !== 'custom' ? 'bg-gray-50 text-gray-600' : 'bg-white'
           }`}
         />
+      </section>
+
+      {/* Avatar & Presenter Style */}
+      <section>
+        <h3 className="text-lg font-bold text-gray-900 mb-1">Choose Your Presenter</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Select an AI avatar and presentation style for your education videos
+        </p>
+
+        <div className="grid grid-cols-3 gap-3">
+          {AVATAR_PRESETS.map((avatar) => (
+            <button
+              key={avatar.id}
+              onClick={() => onSelectAvatar(avatar.id)}
+              className={`relative px-4 py-4 rounded-xl border-2 text-center transition-all ${
+                selectedAvatar === avatar.id
+                  ? 'border-medflix-accent bg-medflix-accent/5 shadow-md ring-2 ring-medflix-accent/20'
+                  : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-sm'
+              }`}
+            >
+              {selectedAvatar === avatar.id && (
+                <div className="absolute top-2 right-2 w-5 h-5 bg-medflix-accent rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+              <div className="text-3xl mb-2">{avatar.preview}</div>
+              <p className="font-semibold text-sm text-gray-900">{avatar.name}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{avatar.subtitle}</p>
+              <p className="text-[10px] text-gray-400 mt-1 font-mono">{avatar.avatar_style}</p>
+            </button>
+          ))}
+        </div>
       </section>
 
       {/* Characters */}
@@ -647,7 +848,9 @@ function SetupStep({
         {isGenerating ? (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-700">Generating videos...</p>
+              <p className="text-sm font-medium text-gray-700">
+                {generationPhase || 'Generating care episodes...'}
+              </p>
               <p className="text-sm text-medflix-accent font-medium">{generationProgress}%</p>
             </div>
             <div className="bg-gray-200 rounded-full h-2">
@@ -656,9 +859,17 @@ function SetupStep({
                 style={{ width: `${generationProgress}%` }}
               />
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Creating personalized video episodes from your medical documents...
-            </p>
+            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <Database className="w-3 h-3" /> OpenFDA + DailyMed
+              </span>
+              <span className="flex items-center gap-1">
+                <Brain className="w-3 h-3" /> Perplexity Sonar
+              </span>
+              <span className="flex items-center gap-1">
+                <Video className="w-3 h-3" /> HeyGen Video
+              </span>
+            </div>
           </div>
         ) : (
           <button
@@ -758,6 +969,29 @@ function VideosStep({ videos, style, onComplete }) {
                 <p className="text-xs text-red-500 mt-1">{video.errorMsg}</p>
               )}
 
+              {/* Key points from context engine */}
+              {video.keyPoints?.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {video.keyPoints.slice(0, 3).map((kp, idx) => (
+                    <span key={idx} className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                      {kp.length > 50 ? kp.slice(0, 50) + '...' : kp}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Clinical data badge */}
+              {video.clinicalData && (
+                <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-400">
+                  {video.clinicalData.fdaDrugsFound > 0 && (
+                    <span>FDA: {video.clinicalData.fdaDrugsFound} drugs</span>
+                  )}
+                  {video.clinicalData.dailyMedFound > 0 && (
+                    <span>DailyMed: {video.clinicalData.dailyMedFound} labels</span>
+                  )}
+                </div>
+              )}
+
               {video.prompt && (
                 <div className="mt-3">
                   <div className="flex items-center gap-2">
@@ -766,7 +1000,7 @@ function VideosStep({ videos, style, onComplete }) {
                       className="text-xs font-medium text-medflix-dark hover:text-medflix-accent transition-colors"
                       type="button"
                     >
-                      {expandedId === video.id ? 'Hide prompt' : 'View prompt'}
+                      {expandedId === video.id ? 'Hide script' : 'View script'}
                     </button>
                     <span className="text-xs text-gray-400">•</span>
                     <button
@@ -774,7 +1008,7 @@ function VideosStep({ videos, style, onComplete }) {
                       className="text-xs font-medium text-medflix-dark hover:text-medflix-accent transition-colors"
                       type="button"
                     >
-                      Copy prompt
+                      Copy script
                     </button>
                     {video?.research?.used_sonar && (
                       <span className="text-[11px] text-gray-400 ml-1">

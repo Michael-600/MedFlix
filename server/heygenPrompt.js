@@ -6,7 +6,7 @@ function compactJson(value) {
   }
 }
 
-export function buildPerplexityDeepResearchPrompt({ patient, episode, openEvidence }) {
+export function buildPerplexityDeepResearchPrompt({ patient, episode, clinicalContext }) {
   const patientName = patient?.name || 'the patient'
   const diagnosis = patient?.diagnosis || 'the condition'
   const age = patient?.age ? `Age: ${patient.age}` : null
@@ -16,8 +16,8 @@ export function buildPerplexityDeepResearchPrompt({ patient, episode, openEviden
   const episodeTitle = episode?.title || episode?.episodeTitle || 'the episode'
   const episodeDescription = episode?.description || null
 
-  const evidenceSummary = openEvidence?.summary || null
-  const evidenceSources = Array.isArray(openEvidence?.sources) ? openEvidence.sources.slice(0, 12) : []
+  const contextSummary = clinicalContext?.summary || null
+  const contextSources = Array.isArray(clinicalContext?.sources) ? clinicalContext.sources.slice(0, 12) : []
 
   const patientLines = [
     `Name: ${patientName}`,
@@ -27,10 +27,22 @@ export function buildPerplexityDeepResearchPrompt({ patient, episode, openEviden
     procedure,
   ].filter(Boolean)
 
-  const evidenceLines = [
-    evidenceSummary ? `Summary: ${evidenceSummary}` : null,
-    evidenceSources.length
-      ? `Signals: ${evidenceSources
+  // Include medication details if available
+  const medLines = (patient?.medications || []).map(
+    (m) => `${m.name} ${m.dose} ${m.frequency} (${m.purpose})`
+  )
+  if (medLines.length) {
+    patientLines.push(`Medications: ${medLines.join('; ')}`)
+  }
+
+  if (patient?.conditions?.length) {
+    patientLines.push(`Comorbidities: ${patient.conditions.join(', ')}`)
+  }
+
+  const contextLines = [
+    contextSummary ? `Summary: ${contextSummary}` : null,
+    contextSources.length
+      ? `Signals: ${contextSources
           .map((s) => (s?.detail ? `${s.label}: ${s.detail}` : null))
           .filter(Boolean)
           .slice(0, 10)
@@ -43,7 +55,7 @@ export function buildPerplexityDeepResearchPrompt({ patient, episode, openEviden
       role: 'system',
       content:
         'You are a clinical research assistant. Use web search to find high-quality, up-to-date clinical guidance and evidence. ' +
-        'Write in clear patient-friendly language. Do not invent facts; if uncertain, say so. Avoid providing emergency/critical directives beyond general “seek care” guidance.',
+        'Write in clear patient-friendly language. Do not invent facts; if uncertain, say so. Avoid providing emergency/critical directives beyond general "seek care" guidance.',
     },
     {
       role: 'user',
@@ -52,8 +64,8 @@ export function buildPerplexityDeepResearchPrompt({ patient, episode, openEviden
         `Patient context:\n- ${patientLines.join('\n- ')}\n\n` +
         `Episode focus:\n- Title: ${episodeTitle}` +
         (episodeDescription ? `\n- Description: ${episodeDescription}` : '') +
-        `\n\nOpenEvidence context (from our clinical evidence tool):\n` +
-        (evidenceLines.length ? `- ${evidenceLines.join('\n- ')}` : '- None provided') +
+        `\n\nClinical context (from OpenFDA, DailyMed, ClinicalTrials.gov):\n` +
+        (contextLines.length ? `- ${contextLines.join('\n- ')}` : '- None provided') +
         `\n\nOutput format:\n` +
         `1) Key takeaways (5-8 bullets)\n` +
         `2) Practical actions (5-8 bullets)\n` +
@@ -68,14 +80,14 @@ export function buildHeyGenPrompt({
   basePrompt,
   patient,
   episode,
-  openEvidence,
+  clinicalContext,
   sonarResearch,
 }) {
   const patientName = patient?.name || 'Patient'
   const diagnosis = patient?.diagnosis || 'their condition'
   const episodeTitle = episode?.title || episode?.episodeTitle || null
 
-  const evidenceSummary = openEvidence?.summary || null
+  const contextSummary = clinicalContext?.summary || null
   const researchNotes = sonarResearch?.content || null
 
   const sections = []
@@ -90,8 +102,15 @@ export function buildHeyGenPrompt({
       (episodeTitle ? `- Episode: ${episodeTitle}\n` : '')
   )
 
-  if (evidenceSummary) {
-    sections.push(`\nOPENEVIDENCE SUMMARY:\n${evidenceSummary}\n`)
+  if (patient?.medications?.length) {
+    const medList = patient.medications
+      .map((m) => `  ${m.name} ${m.dose} ${m.frequency} – ${m.purpose}`)
+      .join('\n')
+    sections.push(`\nMEDICATIONS:\n${medList}\n`)
+  }
+
+  if (contextSummary) {
+    sections.push(`\nCLINICAL CONTEXT SUMMARY:\n${contextSummary}\n`)
   }
 
   if (researchNotes) {
@@ -100,11 +119,15 @@ export function buildHeyGenPrompt({
 
   sections.push(
     `\nVIDEO SCRIPT REQUIREMENTS:\n` +
-      `- Length: 30–45 seconds.\n` +
-      `- Tone: reassuring, concise, medically accurate, patient-friendly.\n` +
-      `- Avoid jargon; define terms briefly.\n` +
-      `- Give clear next steps; include a brief "when to contact your care team" line.\n` +
-      `- Do not include URLs or citations in the spoken script.\n`
+      `- Length: 50–60 seconds (300-400 words total).\n` +
+      `- Tone: reassuring, detailed, medically accurate, patient-friendly.\n` +
+      `- You are a health education GUIDE, NOT the patient's doctor.\n` +
+      `- NEVER say "I prescribed" or "I diagnosed". Always say "your doctor prescribed", "your care team recommended".\n` +
+      `- Reference specific medication names, doses, and clinical values from the patient's data.\n` +
+      `- Avoid jargon; define medical terms in plain language.\n` +
+      `- Give clear, specific next steps.\n` +
+      `- Do not include URLs or citations in the spoken script.\n` +
+      `- NEVER use vague wellness language like "vital energy" or "holistic balance" — use real medical facts only.\n`
   )
 
   return sections.filter(Boolean).join('\n')
@@ -115,4 +138,3 @@ export function safePreview(value, limit = 4000) {
   if (str.length <= limit) return str
   return `${str.slice(0, limit)}…`
 }
-
