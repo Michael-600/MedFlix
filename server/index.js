@@ -2,6 +2,11 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import twilio from 'twilio'
+import { Poke } from 'poke'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+import { randomUUID } from 'node:crypto'
+import { z } from 'zod'
 import { getPerplexityKey, perplexitySonarChat } from './perplexitySonar.js'
 import { buildHeyGenPrompt, buildPerplexityDeepResearchPrompt, safePreview } from './heygenPrompt.js'
 import { searchClinicalData } from './clinicalSearch.js'
@@ -9,6 +14,7 @@ import { searchClinicalData } from './clinicalSearch.js'
 const app = express()
 app.use(cors())
 app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
 
 const HEYGEN_API_KEY = process.env.HEYGEN_API_KEY
 const LIVEAVATAR_API_KEY = process.env.LIVEAVATAR_API_KEY
@@ -27,6 +33,27 @@ const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER
 const twilioClient = (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN)
   ? twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
   : null
+
+// ─── Poke client + webhook state ────────────────────────
+const pokeClient = POKE_API_KEY ? new Poke({ apiKey: POKE_API_KEY }) : null
+let pokeWebhookUrl = null
+let pokeWebhookToken = null
+
+// ─── Pending MCP callback requests ─────────────────────
+const pendingRequests = new Map() // requestId → { resolve, timer, createdAt }
+
+// Safety net: sweep stale pending requests every 60s
+setInterval(() => {
+  const now = Date.now()
+  for (const [id, entry] of pendingRequests) {
+    if (now - entry.createdAt > 90_000) {
+      entry.resolve(null)
+      clearTimeout(entry.timer)
+      pendingRequests.delete(id)
+      console.warn(`[Poke] Swept stale pending request ${id}`)
+    }
+  }
+}, 60_000)
 
 // ─── Helper ────────────────────────────────────────────
 async function heygenFetch(path, opts = {}) {
@@ -513,11 +540,28 @@ app.post('/api/perplexity/research', async (req, res) => {
 // In-memory store: patientId → { name, phoneNumber, diagnosis, medications[] }
 const medicationStore = new Map()
 
+// ─── Helper: normalize phone to E.164 ──────────────────
+function normalizePhone(phone) {
+  if (!phone) return phone
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 10) return `+1${digits}`
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
+  return phone.startsWith('+') ? phone : `+${digits}`
+}
+
 // ─── Helper: send SMS via Twilio ────────────────────────
+// Twilio trial accounts prepend ~42 chars ("Sent from your Twilio trial account - ")
+// and may reject messages exceeding 1600 total chars. Truncate to be safe.
+const SMS_MAX_BODY = 320
+
 async function sendSms(to, body) {
   if (!twilioClient) throw new Error('twilio_not_configured')
+  const trimmed = body.length > SMS_MAX_BODY
+    ? body.slice(0, SMS_MAX_BODY - 3) + '...'
+    : body
+  if (trimmed !== body) console.warn(`[Twilio] Truncated SMS from ${body.length} to ${trimmed.length} chars`)
   const msg = await twilioClient.messages.create({
-    body,
+    body: trimmed,
     from: TWILIO_PHONE_NUMBER,
     to,
   })
@@ -624,6 +668,78 @@ function buildFallbackReminder({ patientName, medication }) {
   return parts.join(' ')
 }
 
+// ─── Poke webhook setup ─────────────────────────────────
+async function setupPokeWebhook() {
+  if (!pokeClient) {
+    console.log('[Poke] No API key — webhook not created')
+    return
+  }
+  try {
+    const webhook = await pokeClient.createWebhook({
+      condition: 'When MedFlix sends patient data for SMS crafting',
+      action: [
+        'You are MedFlix\'s medication assistant. A patient needs a personalized SMS message.',
+        'Use the available MCP tools to gather context:',
+        '1. Call get_patient_context with the patient\'s name and diagnosis',
+        '2. Call search_clinical_evidence if the diagnosis warrants it',
+        '3. Call research_medical_topic for additional context',
+        'Then craft a short, warm, personalized SMS message (under 300 chars) based on the purpose field:',
+        '- "welcome": Welcome the patient to MedFlix medication reminders',
+        '- "reminder": Remind them to take a specific medication and why it matters',
+        '- "reply": Answer their inbound message using medical context',
+        'Finally, call deliver_crafted_message with the requestId from the data and your crafted message text.',
+        'IMPORTANT: Always call deliver_crafted_message when done — it delivers the SMS to the patient.',
+      ].join('\n'),
+    })
+    pokeWebhookUrl = webhook.webhookUrl
+    pokeWebhookToken = webhook.webhookToken
+    console.log(`[Poke] Webhook created: triggerId=${webhook.triggerId}`)
+  } catch (e) {
+    console.error('[Poke] Failed to create webhook:', e.message)
+  }
+}
+
+// ─── Poke-crafted SMS helper ─────────────────────────────
+async function pokeCraft({ purpose, patientName, diagnosis, medication, inboundMessage, phoneNumber }) {
+  if (!pokeClient || !pokeWebhookUrl) return null
+
+  const requestId = randomUUID()
+
+  try {
+    const promise = new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        pendingRequests.delete(requestId)
+        console.warn(`[Poke] pokeCraft timed out (30s) for ${requestId} — is MCP tunnel running? Try: npx poke tunnel http://localhost:${PORT}/mcp --name "MedFlix"`)
+        resolve(null)
+      }, 30_000)
+
+      pendingRequests.set(requestId, { resolve, timer, createdAt: Date.now() })
+    })
+
+    console.log(`[Poke] Sending webhook for ${purpose}: requestId=${requestId}`)
+    await pokeClient.sendWebhook({
+      webhookUrl: pokeWebhookUrl,
+      webhookToken: pokeWebhookToken,
+      data: {
+        requestId,
+        purpose,
+        patientName,
+        diagnosis: diagnosis || 'unknown',
+        medication: medication ? `${medication.name} ${medication.dosage}` : undefined,
+        medicationInstructions: medication?.instructions || undefined,
+        inboundMessage: inboundMessage || undefined,
+        phoneNumber: phoneNumber || undefined,
+      },
+    })
+
+    return await promise
+  } catch (e) {
+    console.error(`[Poke] pokeCraft error:`, e.message)
+    pendingRequests.delete(requestId)
+    return null
+  }
+}
+
 // Reminder interval – check every 60s if any medication is due
 setInterval(async () => {
   if (!twilioClient) return
@@ -636,14 +752,24 @@ setInterval(async () => {
       if (!med.active || !med.times?.includes(currentTime)) continue
 
       try {
-        const context = await getPatientContext(record.name, record.diagnosis)
-        const crafted = await craftReminder({
+        // Poke-first → Perplexity fallback → template fallback
+        let smsBody = await pokeCraft({
+          purpose: 'reminder',
           patientName: record.name,
           diagnosis: record.diagnosis,
           medication: med,
-          context,
+          phoneNumber: record.phoneNumber,
         })
-        const smsBody = crafted || buildFallbackReminder({ patientName: record.name, medication: med })
+        if (!smsBody) {
+          const context = await getPatientContext(record.name, record.diagnosis)
+          smsBody = await craftReminder({
+            patientName: record.name,
+            diagnosis: record.diagnosis,
+            medication: med,
+            context,
+          })
+        }
+        smsBody = smsBody || buildFallbackReminder({ patientName: record.name, medication: med })
         await sendSms(record.phoneNumber, smsBody)
       } catch (err) {
         console.error(`[Reminder] failed for ${patientId}/${med.name}:`, err.message)
@@ -655,14 +781,15 @@ setInterval(async () => {
 // Register a patient for reminders
 app.post('/api/poke/register', async (req, res) => {
   try {
-    const { name, phoneNumber, userId, diagnosis } = req.body
-    if (!name || !phoneNumber) {
+    const { name, phoneNumber: rawPhone, userId, diagnosis } = req.body
+    if (!name || !rawPhone) {
       return res.status(400).json({ error: 'name and phoneNumber are required' })
     }
     if (!twilioClient) {
       return res.status(503).json({ error: 'twilio_not_configured' })
     }
 
+    const phoneNumber = normalizePhone(rawPhone)
     const patientId = `patient_${userId || Date.now()}`
     medicationStore.set(patientId, {
       name,
@@ -673,10 +800,15 @@ app.post('/api/poke/register', async (req, res) => {
       medications: [],
     })
 
-    // Craft personalized welcome via Perplexity + OpenEvidence, deliver with Twilio
-    let welcomeMsg
-    if (PERPLEXITY_API_KEY && diagnosis) {
-      console.log('[Register] Crafting personalized welcome...')
+    // Poke-first → Perplexity fallback → template welcome
+    let welcomeMsg = await pokeCraft({
+      purpose: 'welcome',
+      patientName: name,
+      diagnosis: diagnosis || 'general',
+      phoneNumber,
+    })
+    if (!welcomeMsg && PERPLEXITY_API_KEY && diagnosis) {
+      console.log('[Register] Crafting personalized welcome via Perplexity...')
       const context = await getPatientContext(name, diagnosis)
       const result = await perplexitySonarChat({
         apiKey: PERPLEXITY_API_KEY,
@@ -752,18 +884,26 @@ app.post('/api/poke/send-reminder', async (req, res) => {
       targetMeds = record.medications.filter(m => m.active)
     }
 
-    // Get OpenEvidence + Perplexity context, then craft personalized messages
-    const context = await getPatientContext(record.name, record.diagnosis)
-
+    // Poke-first → Perplexity fallback → template fallback
     const sentMessages = []
     for (const med of targetMeds.length ? targetMeds : [{ name: 'medications', dosage: '', instructions: '' }]) {
-      const crafted = await craftReminder({
+      let smsBody = await pokeCraft({
+        purpose: 'reminder',
         patientName: record.name,
         diagnosis: record.diagnosis,
         medication: med,
-        context,
+        phoneNumber: record.phoneNumber,
       })
-      const smsBody = crafted || buildFallbackReminder({ patientName: record.name, medication: med })
+      if (!smsBody) {
+        const context = await getPatientContext(record.name, record.diagnosis)
+        smsBody = await craftReminder({
+          patientName: record.name,
+          diagnosis: record.diagnosis,
+          medication: med,
+          context,
+        })
+      }
+      smsBody = smsBody || buildFallbackReminder({ patientName: record.name, medication: med })
       await sendSms(record.phoneNumber, smsBody)
       sentMessages.push(smsBody)
     }
@@ -791,6 +931,392 @@ app.delete('/api/poke/unregister/:patientId', (req, res) => {
 })
 
 // ═══════════════════════════════════════════════════════
+//  MCP SERVER  –  Streamable HTTP for Poke agent
+// ═══════════════════════════════════════════════════════
+
+function registerMcpTools(server) {
+  // Tool 1: deliver_crafted_message — resolves a pending pokeCraft() Promise
+  server.tool(
+    'deliver_crafted_message',
+    'Delivers a crafted SMS message back to MedFlix. Call this after researching and crafting a personalized message for the patient. The requestId comes from the webhook data.',
+    {
+      requestId: z.string().describe('The requestId from the webhook data'),
+      message: z.string().describe('The crafted SMS message text (under 300 chars)'),
+    },
+    async ({ requestId, message }) => {
+      const pending = pendingRequests.get(requestId)
+      if (!pending) {
+        return { content: [{ type: 'text', text: `No pending request found for ${requestId} — it may have timed out.` }] }
+      }
+      clearTimeout(pending.timer)
+      pendingRequests.delete(requestId)
+      pending.resolve(message)
+      console.log(`[MCP] deliver_crafted_message resolved ${requestId}: ${message.slice(0, 80)}...`)
+      return { content: [{ type: 'text', text: `Message delivered for request ${requestId}.` }] }
+    }
+  )
+
+  // Tool 2: get_patient_context — calls getPatientContext() directly
+  server.tool(
+    'get_patient_context',
+    'Fetches clinical trial evidence from ClinicalTrials.gov and latest medical research from Perplexity Sonar for a patient\'s diagnosis.',
+    {
+      patientName: z.string().describe('The patient\'s name'),
+      diagnosis: z.string().describe('The patient\'s diagnosis'),
+      topic: z.string().optional().describe('Optional focus topic'),
+    },
+    async ({ patientName, diagnosis, topic }) => {
+      try {
+        const context = await getPatientContext(patientName, diagnosis)
+        const sections = [`## Patient: ${patientName}`, `## Diagnosis: ${diagnosis}`]
+        if (topic) sections.push(`## Focus: ${topic}`)
+        if (context?.evidenceSummary) {
+          sections.push(`\n### Clinical Evidence\n${context.evidenceSummary}`)
+        }
+        if (context?.sonarContent) {
+          sections.push(`\n### Latest Research\n${context.sonarContent}`)
+        }
+        if (!context) {
+          sections.push('\nNo context available.')
+        }
+        return { content: [{ type: 'text', text: sections.join('\n') }] }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error: ${e.message}` }] }
+      }
+    }
+  )
+
+  // Tool 3: get_medication_schedule — reads medicationStore directly
+  server.tool(
+    'get_medication_schedule',
+    'Returns the patient\'s current medication list with dosages, times, and instructions.',
+    { patientId: z.string().describe('The patient ID from MedFlix registration') },
+    async ({ patientId }) => {
+      const record = medicationStore.get(patientId)
+      if (!record) {
+        return { content: [{ type: 'text', text: `Patient ${patientId} not found.` }] }
+      }
+      const meds = (record.medications || []).filter(m => m.active)
+      if (meds.length === 0) {
+        return { content: [{ type: 'text', text: `${record.name} has no active medications.` }] }
+      }
+      const list = meds.map(m =>
+        `- ${m.name} ${m.dosage} at ${m.times?.join(', ') || 'unscheduled'}: ${m.instructions || 'no special instructions'}`
+      ).join('\n')
+      return { content: [{ type: 'text', text: `Medications for ${record.name}:\n${list}` }] }
+    }
+  )
+
+  // Tool 4: search_clinical_evidence — calls searchClinicalData() directly
+  server.tool(
+    'search_clinical_evidence',
+    'Searches ClinicalTrials.gov for clinical trial data related to a diagnosis or medical topic.',
+    {
+      query: z.string().describe('Search query, e.g. "metformin side effects"'),
+      diagnosis: z.string().optional().describe('Optional diagnosis to narrow results'),
+    },
+    async ({ query, diagnosis }) => {
+      try {
+        const data = await searchClinicalData({ query, diagnosis })
+        if (!data.ok) {
+          return { content: [{ type: 'text', text: `Search failed: ${data.error || 'unknown'}` }] }
+        }
+        const sections = []
+        if (data.data?.summary) sections.push(data.data.summary)
+        if (data.data?.sources?.length) {
+          sections.push('\nKey findings:')
+          data.data.sources.forEach(s => sections.push(`- ${s.label}: ${s.detail}`))
+        }
+        return { content: [{ type: 'text', text: sections.join('\n') || 'No results found.' }] }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error: ${e.message}` }] }
+      }
+    }
+  )
+
+  // Tool 5: research_medical_topic — calls perplexitySonarChat() directly
+  server.tool(
+    'research_medical_topic',
+    'Uses Perplexity Sonar to find the latest medical evidence on a topic.',
+    {
+      patientName: z.string().describe('Patient name for context'),
+      diagnosis: z.string().describe('Patient diagnosis'),
+      topic: z.string().describe('The specific medical topic or question to research'),
+    },
+    async ({ patientName, diagnosis, topic }) => {
+      if (!PERPLEXITY_API_KEY) {
+        return { content: [{ type: 'text', text: 'Perplexity not configured.' }] }
+      }
+      try {
+        const messages = buildPerplexityDeepResearchPrompt({
+          patient: { name: patientName, diagnosis },
+          episode: { title: topic, description: topic },
+        })
+        const result = await perplexitySonarChat({
+          apiKey: PERPLEXITY_API_KEY,
+          model: 'sonar',
+          messages,
+        })
+        if (!result.ok) {
+          return { content: [{ type: 'text', text: `Research unavailable: ${result.error}` }] }
+        }
+        return { content: [{ type: 'text', text: result.data?.content || 'No research content returned.' }] }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error: ${e.message}` }] }
+      }
+    }
+  )
+
+  // Tool 6: log_medication_taken — reads medicationStore directly
+  server.tool(
+    'log_medication_taken',
+    'Records that the patient has taken a specific medication.',
+    {
+      patientId: z.string().describe('The patient ID from MedFlix'),
+      medicationName: z.string().describe('Name of the medication that was taken'),
+    },
+    async ({ patientId, medicationName }) => {
+      const record = medicationStore.get(patientId)
+      if (!record) {
+        return { content: [{ type: 'text', text: `Patient ${patientId} not found.` }] }
+      }
+      const med = record.medications?.find(m => m.name.toLowerCase() === medicationName.toLowerCase())
+      if (!med) {
+        return { content: [{ type: 'text', text: `Medication "${medicationName}" not found in ${record.name}'s schedule.` }] }
+      }
+      const timestamp = new Date().toLocaleTimeString()
+      return { content: [{ type: 'text', text: `Logged: ${record.name} took ${med.name} (${med.dosage}) at ${timestamp}.` }] }
+    }
+  )
+
+  // Tool 7: send_reminder — pokeCraft → craftReminder → sendSms
+  server.tool(
+    'send_reminder',
+    'Triggers a medication reminder for a registered patient via SMS.',
+    {
+      patientId: z.string().describe('The patient ID from MedFlix'),
+      medicationName: z.string().optional().describe('Specific medication name, or omit to remind about all'),
+    },
+    async ({ patientId, medicationName }) => {
+      try {
+        const record = medicationStore.get(patientId)
+        if (!record) {
+          return { content: [{ type: 'text', text: `Patient ${patientId} not found.` }] }
+        }
+        let targetMeds
+        if (medicationName) {
+          const med = record.medications.find(m => m.name === medicationName)
+          targetMeds = med ? [med] : [{ name: medicationName, dosage: '', instructions: '' }]
+        } else {
+          targetMeds = record.medications.filter(m => m.active)
+        }
+        const sent = []
+        for (const med of targetMeds.length ? targetMeds : [{ name: 'medications', dosage: '', instructions: '' }]) {
+          let smsBody = await pokeCraft({
+            purpose: 'reminder',
+            patientName: record.name,
+            diagnosis: record.diagnosis,
+            medication: med,
+            phoneNumber: record.phoneNumber,
+          })
+          if (!smsBody) {
+            const context = await getPatientContext(record.name, record.diagnosis)
+            smsBody = await craftReminder({
+              patientName: record.name,
+              diagnosis: record.diagnosis,
+              medication: med,
+              context,
+            })
+          }
+          smsBody = smsBody || buildFallbackReminder({ patientName: record.name, medication: med })
+          await sendSms(record.phoneNumber, smsBody)
+          sent.push(smsBody)
+        }
+        return { content: [{ type: 'text', text: `Sent ${sent.length} reminder(s) to ${record.name}.` }] }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error: ${e.message}` }] }
+      }
+    }
+  )
+
+  // Tool 8: lookup_patient_by_phone — scans medicationStore by phone
+  server.tool(
+    'lookup_patient_by_phone',
+    'Finds a registered patient by their phone number. Useful when handling inbound SMS.',
+    {
+      phoneNumber: z.string().describe('Phone number in E.164 format, e.g. +14155551234'),
+    },
+    async ({ phoneNumber }) => {
+      for (const [patientId, record] of medicationStore) {
+        if (record.phoneNumber === phoneNumber) {
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({ patientId, name: record.name, diagnosis: record.diagnosis, phoneNumber: record.phoneNumber }),
+            }],
+          }
+        }
+      }
+      return { content: [{ type: 'text', text: `No patient found with phone ${phoneNumber}.` }] }
+    }
+  )
+
+  // Tool 9: send_sms — calls sendSms() directly
+  server.tool(
+    'send_sms',
+    'Sends an SMS message to a phone number via Twilio.',
+    {
+      to: z.string().describe('Recipient phone number in E.164 format'),
+      body: z.string().describe('The SMS message text'),
+    },
+    async ({ to, body }) => {
+      try {
+        const msg = await sendSms(to, body)
+        return { content: [{ type: 'text', text: `SMS sent: ${msg.sid}` }] }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to send SMS: ${e.message}` }] }
+      }
+    }
+  )
+}
+
+// ─── MCP HTTP endpoints ─────────────────────────────────
+const mcpTransports = new Map() // sessionId → transport
+
+app.post('/mcp', async (req, res) => {
+  try {
+    const sessionId = req.headers['mcp-session-id']
+    if (sessionId && mcpTransports.has(sessionId)) {
+      const transport = mcpTransports.get(sessionId)
+      await transport.handleRequest(req, res, req.body)
+      return
+    }
+
+    // New session
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+    })
+    const server = new McpServer({
+      name: 'MedFlix Medication Assistant',
+      version: '1.0.0',
+    })
+    registerMcpTools(server)
+
+    transport.onclose = () => {
+      const sid = transport.sessionId
+      if (sid) mcpTransports.delete(sid)
+      console.log(`[MCP] Session closed: ${sid}`)
+    }
+
+    await server.connect(transport)
+    if (transport.sessionId) {
+      mcpTransports.set(transport.sessionId, transport)
+      console.log(`[MCP] New session: ${transport.sessionId}`)
+    }
+    await transport.handleRequest(req, res, req.body)
+  } catch (e) {
+    console.error('[MCP] POST error:', e)
+    if (!res.headersSent) res.status(500).json({ error: e.message })
+  }
+})
+
+app.get('/mcp', async (req, res) => {
+  const sessionId = req.headers['mcp-session-id']
+  if (!sessionId || !mcpTransports.has(sessionId)) {
+    res.status(400).json({ error: 'Invalid or missing session ID' })
+    return
+  }
+  try {
+    const transport = mcpTransports.get(sessionId)
+    await transport.handleRequest(req, res)
+  } catch (e) {
+    console.error('[MCP] GET error:', e)
+    if (!res.headersSent) res.status(500).json({ error: e.message })
+  }
+})
+
+app.delete('/mcp', async (req, res) => {
+  const sessionId = req.headers['mcp-session-id']
+  if (!sessionId || !mcpTransports.has(sessionId)) {
+    res.status(400).json({ error: 'Invalid or missing session ID' })
+    return
+  }
+  try {
+    const transport = mcpTransports.get(sessionId)
+    await transport.close()
+    mcpTransports.delete(sessionId)
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('[MCP] DELETE error:', e)
+    if (!res.headersSent) res.status(500).json({ error: e.message })
+  }
+})
+
+// ═══════════════════════════════════════════════════════
+//  TWILIO WEBHOOK  –  Inbound SMS handling
+// ═══════════════════════════════════════════════════════
+
+app.post('/api/twilio/webhook', async (req, res) => {
+  // Respond immediately with empty TwiML so Twilio doesn't retry
+  res.type('text/xml').send('<Response></Response>')
+
+  const from = req.body?.From
+  const body = req.body?.Body
+  if (!from || !body) return
+
+  console.log(`[Twilio] Inbound SMS from ${from}: ${body}`)
+
+  // Lookup patient by phone number
+  let patient = null
+  for (const [, record] of medicationStore) {
+    if (record.phoneNumber === from) {
+      patient = record
+      break
+    }
+  }
+
+  if (!patient) {
+    console.log(`[Twilio] Unknown sender ${from} — no patient registered`)
+    return
+  }
+
+  try {
+    // Poke-first → Perplexity fallback → template reply
+    let reply = await pokeCraft({
+      purpose: 'reply',
+      patientName: patient.name,
+      diagnosis: patient.diagnosis,
+      inboundMessage: body,
+      phoneNumber: from,
+    })
+
+    if (!reply && PERPLEXITY_API_KEY) {
+      const context = await getPatientContext(patient.name, patient.diagnosis)
+      const result = await perplexitySonarChat({
+        apiKey: PERPLEXITY_API_KEY,
+        model: 'sonar',
+        messages: [
+          { role: 'system', content: 'You are a caring medical assistant replying to a patient\'s SMS. Write ONLY the reply text. Under 300 characters. Be warm and helpful.' },
+          { role: 'user', content: `Patient ${patient.name} (diagnosis: ${patient.diagnosis}) texted: "${body}". ${context?.evidenceSummary ? `Medical context: ${context.evidenceSummary}` : ''} Reply helpfully in under 300 chars. Just the message.` },
+        ],
+        max_tokens: 200,
+        temperature: 0.7,
+      })
+      if (result.ok && result.data?.content) {
+        reply = result.data.content.replace(/^["']|["']$/g, '').trim()
+      }
+    }
+
+    reply = reply || `Hi ${patient.name}, thanks for your message! For medical questions, please consult your healthcare provider. - MedFlix`
+
+    await sendSms(from, reply)
+    console.log(`[Twilio] Reply sent to ${from}: ${reply.slice(0, 80)}...`)
+  } catch (e) {
+    console.error(`[Twilio] Failed to reply to ${from}:`, e.message)
+  }
+})
+
+// ═══════════════════════════════════════════════════════
 //  Root + Health check
 // ═══════════════════════════════════════════════════════
 app.get('/', (_req, res) => {
@@ -805,12 +1331,14 @@ app.get('/api/health', (_req, res) => {
     liveavatar: !!LIVEAVATAR_API_KEY,
     perplexity: !!PERPLEXITY_API_KEY,
     poke: !!POKE_API_KEY,
+    poke_webhook: !!pokeWebhookUrl,
+    mcp: true,
     twilio: !!twilioClient,
   })
 })
 
 const PORT = process.env.PORT || 3001
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`MedFlix API server running on http://localhost:${PORT}`)
   console.log(`  HeyGen key: ${HEYGEN_API_KEY ? '***' + HEYGEN_API_KEY.slice(-6) : 'MISSING'}`)
   console.log(`  LiveAvatar key: ${LIVEAVATAR_API_KEY ? '***' + LIVEAVATAR_API_KEY.slice(-6) : 'MISSING'}`)
@@ -818,4 +1346,14 @@ app.listen(PORT, () => {
   console.log(`  Poke key: ${POKE_API_KEY ? '***' + POKE_API_KEY.slice(-6) : 'MISSING'}`)
   console.log(`  Twilio SID: ${TWILIO_ACCOUNT_SID ? '***' + TWILIO_ACCOUNT_SID.slice(-6) : 'MISSING'}`)
   console.log(`  Twilio phone: ${TWILIO_PHONE_NUMBER || 'MISSING'}`)
+
+  // Set up Poke webhook (non-blocking — server is already listening)
+  await setupPokeWebhook()
+
+  console.log(`  Poke webhook: ${pokeWebhookUrl ? 'ACTIVE' : 'NOT SET'}`)
+  console.log(`  MCP endpoint: http://localhost:${PORT}/mcp`)
+  console.log(`  Twilio webhook: POST http://localhost:${PORT}/api/twilio/webhook`)
+  if (pokeClient) {
+    console.log(`  Connect MCP to Poke: npx poke tunnel http://localhost:${PORT}/mcp --name "MedFlix"`)
+  }
 })
