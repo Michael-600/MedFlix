@@ -109,6 +109,16 @@ export default function MedicationReminders({ patientName, diagnosis, userId }) 
         })
       }
 
+      // Sync recovery plan to backend
+      const savedPlan = storage.get(`plan_${userId}`)
+      if (savedPlan) {
+        await fetch('/api/poke/recovery-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ patientId: data.patientId, recoveryPlan: savedPlan }),
+        }).catch(err => console.error('Failed to sync recovery plan:', err))
+      }
+
       showStatus('Connected to Poke! Check your phone for a welcome message.')
     } catch (e) {
       showStatus(e.message, 'error')

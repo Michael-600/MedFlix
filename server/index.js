@@ -678,17 +678,48 @@ async function setupPokeWebhook() {
     const webhook = await pokeClient.createWebhook({
       condition: 'When MedFlix sends patient data for SMS crafting',
       action: [
-        'You are MedFlix\'s medication assistant. A patient needs a personalized SMS message.',
-        'Use the available MCP tools to gather context:',
-        '1. Call get_patient_context with the patient\'s name and diagnosis',
-        '2. Call search_clinical_evidence if the diagnosis warrants it',
-        '3. Call research_medical_topic for additional context',
-        'Then craft a short, warm, personalized SMS message (under 300 chars) based on the purpose field:',
-        '- "welcome": Welcome the patient to MedFlix medication reminders',
-        '- "reminder": Remind them to take a specific medication and why it matters',
-        '- "reply": Answer their inbound message using medical context',
-        'Finally, call deliver_crafted_message with the requestId from the data and your crafted message text.',
-        'IMPORTANT: Always call deliver_crafted_message when done — it delivers the SMS to the patient.',
+        'You are MedFlix\'s compassionate medication assistant. You help patients manage their recovery with warmth, respect, and medical accuracy.',
+        '',
+        '## Your Personality',
+        '- Warm, encouraging, and never condescending',
+        '- Address patients by first name',
+        '- Acknowledge their journey and challenges',
+        '- Never dismiss concerns — validate, then guide',
+        '- Use simple language, avoid medical jargon unless explaining it',
+        '- End with encouragement or a gentle reminder they\'re not alone',
+        '',
+        '## Context Available in Webhook Data',
+        '- patientName, diagnosis: Who they are and what they\'re managing',
+        '- allMedications: Their full medication schedule with dosages and timing',
+        '- recoveryProgress: Which day of their 7-day recovery plan they\'re on, what tasks they have today',
+        '- medication: The specific medication this message is about (for reminders)',
+        '- inboundMessage: What the patient texted (for replies)',
+        '',
+        '## MCP Tools Available (use for deeper research)',
+        '- get_patient_context: Fetches clinical trial evidence + Perplexity research for their diagnosis',
+        '- search_clinical_evidence: Searches ClinicalTrials.gov for specific medical questions',
+        '- research_medical_topic: Gets latest medical guidance from web search',
+        '- get_medication_schedule: Gets their full medication list from the system',
+        '- get_recovery_plan: Gets their 7-day recovery calendar with progress',
+        '',
+        '## How to Respond by Purpose',
+        '- "welcome": Welcome them warmly. Mention their diagnosis by name. Let them know they\'ll get personalized reminders and can text back anytime with questions.',
+        '- "reminder": Remind them to take the specific medication. Mention WHY it matters for their condition. Reference their recovery day if available.',
+        '- "reply": Answer their question thoughtfully. Use the webhook context + MCP tools to give an informed, caring response. If the question is outside your expertise, gently suggest they consult their care team.',
+        '',
+        '## Safety Rules',
+        '- NEVER diagnose or change medication advice',
+        '- ALWAYS suggest contacting their care team for concerning symptoms',
+        '- If asked about side effects, provide general info and recommend discussing with their doctor',
+        '- For emergencies, tell them to call 911 or go to the nearest ER immediately',
+        '',
+        '## Message Format',
+        '- Keep SMS under 280 characters (hard limit imposed by carrier)',
+        '- No markdown, no bullet points — plain text only',
+        '- Sign off with "- MedFlix" only for welcome messages',
+        '',
+        '## Final Step',
+        'After crafting your message, ALWAYS call deliver_crafted_message with the requestId from the data and your message text.',
       ].join('\n'),
     })
     pokeWebhookUrl = webhook.webhookUrl
@@ -705,6 +736,25 @@ async function pokeCraft({ purpose, patientName, diagnosis, medication, inboundM
 
   const requestId = randomUUID()
 
+  // Build rich context from medicationStore
+  let record = null
+  for (const [, r] of medicationStore) {
+    if (r.phoneNumber === phoneNumber || r.name === patientName) { record = r; break }
+  }
+
+  const medsContext = record?.medications?.filter(m => m.active)
+    .map(m => `${m.name} ${m.dosage} at ${m.times?.join(', ')} — ${m.instructions || 'no special instructions'}`)
+    .join('; ') || 'none'
+
+  const plan = record?.recoveryPlan
+  let recoveryContext = 'No recovery plan available'
+  if (plan?.days) {
+    const completed = plan.days.filter(d => d.completed).length
+    const current = plan.days.find(d => d.unlocked && !d.completed) || plan.days[plan.days.length - 1]
+    const checklist = current?.checklist?.map(c => `${c.checked ? '✓' : '○'} ${c.text}`).join(', ') || ''
+    recoveryContext = `Day ${current?.day || '?'}/${plan.totalDays || 7}: "${current?.title}" — ${completed} days completed. Today's tasks: ${checklist}`
+  }
+
   try {
     const promise = new Promise((resolve) => {
       const timer = setTimeout(() => {
@@ -716,7 +766,7 @@ async function pokeCraft({ purpose, patientName, diagnosis, medication, inboundM
       pendingRequests.set(requestId, { resolve, timer, createdAt: Date.now() })
     })
 
-    console.log(`[Poke] Sending webhook for ${purpose}: requestId=${requestId}`)
+    console.log(`[Poke] Sending webhook for ${purpose}: requestId=${requestId}, meds=${medsContext.slice(0, 80)}, recovery=${recoveryContext.slice(0, 80)}`)
     await pokeClient.sendWebhook({
       webhookUrl: pokeWebhookUrl,
       webhookToken: pokeWebhookToken,
@@ -726,7 +776,8 @@ async function pokeCraft({ purpose, patientName, diagnosis, medication, inboundM
         patientName,
         diagnosis: diagnosis || 'unknown',
         medication: medication ? `${medication.name} ${medication.dosage}` : undefined,
-        medicationInstructions: medication?.instructions || undefined,
+        allMedications: medsContext,
+        recoveryProgress: recoveryContext,
         inboundMessage: inboundMessage || undefined,
         phoneNumber: phoneNumber || undefined,
       },
@@ -857,6 +908,19 @@ app.post('/api/poke/medications', async (req, res) => {
     console.error('medications error:', e)
     res.status(500).json({ error: e.message })
   }
+})
+
+// Sync recovery plan from frontend localStorage
+app.post('/api/poke/recovery-plan', (req, res) => {
+  const { patientId, recoveryPlan } = req.body
+  if (!patientId || !recoveryPlan) {
+    return res.status(400).json({ error: 'patientId and recoveryPlan are required' })
+  }
+  const record = medicationStore.get(patientId)
+  if (!record) return res.status(404).json({ error: 'patient not registered' })
+  record.recoveryPlan = recoveryPlan
+  console.log(`[Poke] Recovery plan synced for ${record.name}: ${recoveryPlan.days?.length || 0} days`)
+  res.json({ ok: true })
 })
 
 // Manually trigger a single reminder (demo button)
@@ -1007,7 +1071,29 @@ function registerMcpTools(server) {
     }
   )
 
-  // Tool 4: search_clinical_evidence — calls searchClinicalData() directly
+  // Tool 4: get_recovery_plan — reads recoveryPlan from medicationStore
+  server.tool(
+    'get_recovery_plan',
+    'Returns the patient\'s 7-day recovery calendar with progress, current day, and checklist status.',
+    { patientId: z.string().describe('The patient ID from MedFlix') },
+    async ({ patientId }) => {
+      const record = medicationStore.get(patientId)
+      if (!record) return { content: [{ type: 'text', text: `Patient ${patientId} not found.` }] }
+      if (!record.recoveryPlan?.days) return { content: [{ type: 'text', text: `${record.name} has no recovery plan synced.` }] }
+
+      const plan = record.recoveryPlan
+      const completed = plan.days.filter(d => d.completed).length
+      const lines = plan.days.map(d => {
+        const status = d.completed ? '✓' : d.unlocked ? '→' : '🔒'
+        const checks = d.checklist?.map(c => `  ${c.checked ? '✓' : '○'} ${c.text}`).join('\n') || ''
+        return `${status} Day ${d.day}: ${d.title} — ${d.description}\n${checks}`
+      })
+      const header = `Recovery Plan for ${record.name} (${plan.diagnosis || record.diagnosis}): ${completed}/${plan.totalDays || 7} days completed`
+      return { content: [{ type: 'text', text: `${header}\n\n${lines.join('\n\n')}` }] }
+    }
+  )
+
+  // Tool 5: search_clinical_evidence — calls searchClinicalData() directly
   server.tool(
     'search_clinical_evidence',
     'Searches ClinicalTrials.gov for clinical trial data related to a diagnosis or medical topic.',
@@ -1292,12 +1378,18 @@ app.post('/api/twilio/webhook', async (req, res) => {
 
     if (!reply && PERPLEXITY_API_KEY) {
       const context = await getPatientContext(patient.name, patient.diagnosis)
+      const medsInfo = patient.medications?.filter(m => m.active)
+        .map(m => `${m.name} ${m.dosage}`).join(', ') || ''
+      const plan = patient.recoveryPlan
+      const recoveryInfo = plan?.days
+        ? `Recovery day ${(plan.days.find(d => d.unlocked && !d.completed) || plan.days[plan.days.length - 1])?.day || '?'}/${plan.totalDays || 7}.`
+        : ''
       const result = await perplexitySonarChat({
         apiKey: PERPLEXITY_API_KEY,
         model: 'sonar',
         messages: [
-          { role: 'system', content: 'You are a caring medical assistant replying to a patient\'s SMS. Write ONLY the reply text. Under 300 characters. Be warm and helpful.' },
-          { role: 'user', content: `Patient ${patient.name} (diagnosis: ${patient.diagnosis}) texted: "${body}". ${context?.evidenceSummary ? `Medical context: ${context.evidenceSummary}` : ''} Reply helpfully in under 300 chars. Just the message.` },
+          { role: 'system', content: 'You are a compassionate medical assistant replying to a patient\'s SMS. Be warm, respectful, and helpful. Use simple language. If the question is about symptoms or concerns, validate their feelings first, then provide guidance. Always suggest consulting their care team for serious concerns. Write ONLY the reply text. Under 280 characters.' },
+          { role: 'user', content: `Patient ${patient.name} (diagnosis: ${patient.diagnosis}) texted: "${body}". ${medsInfo ? `Medications: ${medsInfo}.` : ''} ${recoveryInfo} ${context?.evidenceSummary ? `Medical context: ${context.evidenceSummary}` : ''} Reply with empathy and care. Under 280 chars. Just the message.` },
         ],
         max_tokens: 200,
         temperature: 0.7,
@@ -1307,7 +1399,7 @@ app.post('/api/twilio/webhook', async (req, res) => {
       }
     }
 
-    reply = reply || `Hi ${patient.name}, thanks for your message! For medical questions, please consult your healthcare provider. - MedFlix`
+    reply = reply || `Hi ${patient.name}, thank you for reaching out! I want to make sure you get the best answer — please share this question with your care team at your next visit. We're here for you! - MedFlix`
 
     await sendSms(from, reply)
     console.log(`[Twilio] Reply sent to ${from}: ${reply.slice(0, 80)}...`)
